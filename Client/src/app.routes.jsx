@@ -15,8 +15,8 @@ const AdminExpenses = lazy(() => import('./pages/admin/AdminExpenses.jsx'));
 const AdminCompany = lazy(() => import('./pages/admin/AdminCompany.jsx'));
 
 const LoadingScreen = () => (
-  <div className="min-h-screen bg-[#F4F5F7] flex items-center justify-center">
-    <div className="w-10 h-10 border-4 border-[#6366F1]/20 border-t-[#6366F1] rounded-full animate-spin" />
+  <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+    <div className="w-10 h-10 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
   </div>
 );
 
@@ -41,15 +41,15 @@ const AppRoutes = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Navigate to="/login" replace />} />
-        
+
         {/* Auth Routes */}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
         <Route path="/verify-email" element={<PublicRoute><VerifyEmailPage /></PublicRoute>} />
-        
-        {/* Employee Dashboard */}
+
+        {/* Employee & Manager Integrated Dashboard */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        
+
         {/* Refined Admin Routes */}
         <Route path="/admin" element={<AdminRoute><Suspense fallback={<LoadingScreen />}><AdminDashboard /></Suspense></AdminRoute>} />
         <Route path="/admin/users" element={<AdminRoute><Suspense fallback={null}><AdminUsers /></Suspense></AdminRoute>} />
@@ -58,7 +58,7 @@ const AppRoutes = () => {
         <Route path="/admin/company" element={<AdminRoute><Suspense fallback={null}><AdminCompany /></Suspense></AdminRoute>} />
 
         {/* Catch all */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </AnimatePresence>
   );

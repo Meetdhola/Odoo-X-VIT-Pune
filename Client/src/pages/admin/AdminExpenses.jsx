@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import api from '../../lib/axios.js';
-import { Search, Filter, Eye, ShieldAlert, Download, CreditCard, Calendar, User, UserCheck, CheckCircle, XCircle, Clock, X, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Search, Filter, Eye, ShieldAlert, Download, CreditCard, Calendar, User, UserCheck, CheckCircle, XCircle, Clock, X, ChevronLeft, ChevronRight, FileText, Activity, Layers, Terminal } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const StatusPill = ({ label, count, colorClass, active, onClick }) => (
-  <div 
+const StatusPill = ({ label, count, active, onClick, colorClass }) => (
+  <button 
     onClick={onClick}
-    className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border cursor-pointer transition-all ${
-      active ? 'bg-white border-[#6366F1] shadow-sm' : 'bg-transparent border-[#E2E8F0] hover:border-[#CBD5E1]'
+    className={`flex flex-col items-start gap-1 px-6 py-3 rounded-2xl border transition-all min-w-[120px] ${
+      active 
+        ? 'bg-indigo-500/10 border-indigo-500/50 shadow-lg shadow-indigo-500/10' 
+        : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]'
     }`}
   >
-    <span className="text-[13px] font-semibold text-[#64748B]">{label}</span>
-    <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${colorClass}`}>{count}</span>
-  </div>
+    <span className={`text-[10px] font-black uppercase tracking-widest ${active ? 'text-indigo-400' : 'text-slate-500'}`}>{label}</span>
+    <span className={`text-xl font-black italic ${active ? 'text-white' : 'text-slate-400'}`}>{count || 0}</span>
+  </button>
 );
 
 const AdminExpenses = () => {
@@ -34,7 +37,7 @@ const AdminExpenses = () => {
       setExpenses(data.expenses);
       setTotal(data.total);
     } catch {
-      toast.error('Failed to load expenses');
+      toast.error('Audit sync pipeline failed');
     } finally {
       setLoading(false);
     }
@@ -50,112 +53,131 @@ const AdminExpenses = () => {
       setOverrideComment('');
       setShowDetail(true);
     } catch {
-      toast.error('Failed to load expense details');
+      toast.error('Failed to intercept expense data stream');
     }
   };
 
   const handleOverride = async (action) => {
-    if (!window.confirm(`Force ${action} this expense? This bypasses the approval chain.`)) return;
+    if (!window.confirm(`SECURITY OVERRIDE: Force ${action} this transaction? All approval logic will be bypassed.`)) return;
     try {
-      await api.post(`/admin/expenses/${selectedExpense._id}/override`, { action, comment: overrideComment || 'Admin Override' });
-      toast.success(`Expense ${action}d successfully`);
+      await api.post(`/admin/expenses/${selectedExpense._id}/override`, { action, comment: overrideComment || 'Root Administrator Override' });
+      toast.success(`Action: Identity ${action}d via admin override`);
       setShowDetail(false);
       fetchExpenses();
     } catch {
-      toast.error('Override failed');
+      toast.error('Override execution failed');
     }
   };
 
   const categories = ['Travel', 'Meals', 'Accommodation', 'Software', 'Equipment', 'Other'];
 
   return (
-    <AdminLayout title="All Expenses">
-      <div className="space-y-6">
-        {/* Quick Filters */}
-        <div className="flex items-center gap-3">
-           <StatusPill label="All" count={total} colorClass="bg-[#F1F5F9] text-[#64748B]" active={filters.status === ''} onClick={() => setFilters({...filters, status: ''})} />
-           <StatusPill label="Pending" count={expenses.filter(e => e.status === 'pending').length} colorClass="bg-[#FEF3C7] text-[#92400E]" active={filters.status === 'pending'} onClick={() => setFilters({...filters, status: 'pending'})} />
-           <StatusPill label="Approved" count={expenses.filter(e => e.status === 'approved').length} colorClass="bg-[#D1FAE5] text-[#065F46]" active={filters.status === 'approved'} onClick={() => setFilters({...filters, status: 'approved'})} />
-           <StatusPill label="Rejected" count={expenses.filter(e => e.status === 'rejected').length} colorClass="bg-[#FEE2E2] text-[#991B1B]" active={filters.status === 'rejected'} onClick={() => setFilters({...filters, status: 'rejected'})} />
+    <AdminLayout title="Global Audit Cluster" subtitle="Central Expense Telemetry & Verification">
+      <div className="space-y-10 animate-in fade-in duration-500 pb-20">
+        
+        {/* Analytics Header */}
+        <div className="flex flex-wrap items-center gap-4">
+           <StatusPill label="Total Data" count={total} active={filters.status === ''} onClick={() => setFilters({...filters, status: ''})} />
+           <StatusPill label="Pending" count={expenses.filter(e => e.status === 'pending').length} active={filters.status === 'pending'} onClick={() => setFilters({...filters, status: 'pending'})} colorClass="text-amber-500" />
+           <StatusPill label="Settled" count={expenses.filter(e => e.status === 'approved').length} active={filters.status === 'approved'} onClick={() => setFilters({...filters, status: 'approved'})} colorClass="text-emerald-500" />
+           <StatusPill label="Flagged" count={expenses.filter(e => e.status === 'rejected').length} active={filters.status === 'rejected'} onClick={() => setFilters({...filters, status: 'rejected'})} colorClass="text-red-500" />
         </div>
 
-        {/* Filter Bar */}
-        <div className="bg-white p-4 border border-[#E2E8F0] rounded-[10px] shadow-sm flex flex-wrap items-center gap-4">
-           <select 
-             className="h-10 border border-[#D1D5DB] rounded-lg px-3 text-[14px] outline-none min-w-[140px]"
-             value={filters.category} onChange={(e) => setFilters({...filters, category: e.target.value})}
-           >
-             <option value="">All Categories</option>
-             {categories.map(c => <option key={c} value={c}>{c}</option>)}
-           </select>
-
-           <div className="flex items-center gap-2 border border-[#D1D5DB] rounded-lg px-3 h-10">
-             <Calendar size={16} className="text-[#94A3B8]" />
-             <input type="date" className="text-[13px] outline-none bg-transparent" value={filters.from} onChange={(e) => setFilters({...filters, from: e.target.value})} />
-             <span className="text-[#E2E8F0]">|</span>
-             <input type="date" className="text-[13px] outline-none bg-transparent" value={filters.to} onChange={(e) => setFilters({...filters, to: e.target.value})} />
+        {/* Master Control Bar */}
+        <div className="glass-card p-6 border-white/5 rounded-[2.5rem] bg-white/[0.01] flex flex-wrap items-center gap-6 shadow-2xl">
+           <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1 italic">Category Node</label>
+              <select 
+                className="h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-[11px] font-black uppercase text-slate-400 outline-none hover:border-white/20 transition-all cursor-pointer shadow-inner"
+                value={filters.category} onChange={(e) => setFilters({...filters, category: e.target.value})}
+              >
+                <option value="" className="bg-slate-900">All Categories</option>
+                {categories.map(c => <option key={c} value={c} className="bg-slate-900">{c}</option>)}
+              </select>
            </div>
 
-           <button className="bg-white border border-[#D1D5DB] text-[#374151] h-10 px-4 rounded-lg flex items-center gap-2 text-[14px] font-medium hover:bg-gray-50 transition-all ml-auto">
-             <Download size={16} /> Export CSV
+           <div className="flex flex-col gap-2">
+              <label className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-1 italic">Temporal Window</label>
+              <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 h-12 shadow-inner">
+                <Calendar size={14} className="text-slate-500" />
+                <input type="date" className="text-[11px] font-black uppercase outline-none bg-transparent text-slate-300" value={filters.from} onChange={(e) => setFilters({...filters, from: e.target.value})} />
+                <span className="text-slate-800">/</span>
+                <input type="date" className="text-[11px] font-black uppercase outline-none bg-transparent text-slate-300" value={filters.to} onChange={(e) => setFilters({...filters, to: e.target.value})} />
+              </div>
+           </div>
+
+           <button className="h-12 px-6 bg-white/5 border border-white/10 text-slate-500 font-black rounded-xl flex items-center gap-2 text-[10px] uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all ml-auto shadow-inner">
+             <Download size={14} /> Export Telemetry (CSV)
            </button>
         </div>
 
-        {/* Main Table */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[10px] overflow-hidden shadow-sm">
+        {/* Audit Registry Table */}
+        <div className="glass-card rounded-[2.5rem] border-white/5 overflow-hidden shadow-2xl bg-white/[0.01]">
           <table className="w-full text-left">
-            <thead className="bg-[#F8FAFC]">
-               <tr>
-                 <th className="px-6 py-4 text-[11px] font-bold text-[#64748B] uppercase">Employee</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase">Category</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase">Amount</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase">Converted</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase">Waiting on</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase text-center">Status</th>
-                 <th className="px-6 py-4 text-[11px] font-bold text-[#64748B] uppercase text-right">Actions</th>
+            <thead>
+               <tr className="bg-white/[0.01]">
+                 <th className="px-8 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Originator</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Cluster</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Raw Val</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Normalized</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Halt State</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-center">Status</th>
+                 <th className="px-8 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Actions</th>
                </tr>
             </thead>
-            <tbody className="divide-y divide-[#F1F5F9]">
+            <tbody className="divide-y divide-white/5">
               {loading ? (
-                [1, 2, 3].map(i => <tr key={i} className="animate-pulse h-[60px]"><td colSpan="7" className="bg-gray-50/30"></td></tr>)
+                <TableLoader rows={8} />
               ) : expenses.length === 0 ? (
-                <tr><td colSpan="7" className="px-6 py-12 text-center text-[#94A3B8] text-[14px]">No expenses found</td></tr>
+                <tr><td colSpan="7" className="px-8 py-24 text-center text-slate-800 text-[10px] font-black uppercase tracking-[0.4em] italic">Zero Records Found In Current Segment</td></tr>
               ) : expenses.map(exp => (
-                <tr key={exp._id} className="hover:bg-[#F8FAFC] transition-colors h-[64px]">
-                  <td className="px-6">
-                    <div className="flex items-center gap-3">
-                       <div className="w-8 h-8 rounded-full bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5] text-[12px] font-bold">
+                <tr key={exp._id} className="hover:bg-indigo-500/[0.02] transition-colors border-b border-white/5 last:border-0 group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-black uppercase shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
                          {exp.employee?.name?.charAt(0)}
                        </div>
                        <div className="flex flex-col">
-                         <span className="text-[14px] font-medium text-[#0F172A] leading-none mb-1">{exp.employee?.name}</span>
-                         <span className="text-[12px] text-[#64748B] leading-none">{new Date(exp.date).toLocaleDateString()}</span>
+                         <span className="text-[14px] font-black text-white uppercase tracking-tight leading-none mb-1.5">{exp.employee?.name}</span>
+                         <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest leading-none italic">{new Date(exp.date).toLocaleDateString()}</span>
                        </div>
                     </div>
                   </td>
-                  <td className="px-4">
-                    <span className="px-2 py-0.5 bg-[#F1F5F9] text-[#64748B] text-[12px] rounded-md font-medium">{exp.category}</span>
-                  </td>
-                  <td className="px-4 text-[13px] text-[#64748B]">{exp.currency} {exp.amount.toLocaleString()}</td>
-                  <td className="px-4 text-[14px] font-bold text-[#0F172A]">${(exp.convertedAmount || exp.amount).toLocaleString()}</td>
-                  <td className="px-4 text-[13px] font-medium text-[#64748B]">
-                     {exp.currentApprover ? exp.currentApprover.name : <span className="text-[#E2E8F0]">--</span>}
-                  </td>
-                  <td className="px-4 text-center">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
-                      exp.status === 'approved' ? 'bg-[#D1FAE5] text-[#065F46]' : 
-                      exp.status === 'rejected' ? 'bg-[#FEE2E2] text-[#991B1B]' : 'bg-[#FEF3C7] text-[#92400E]'
-                    }`}>
-                      {exp.status}
+                  <td className="px-6 py-6">
+                    <span className="px-2.5 py-1 bg-white/5 border border-white/5 rounded text-[10px] text-slate-500 font-black uppercase tracking-tight group-hover:text-white transition-all">
+                       {exp.category}
                     </span>
                   </td>
-                  <td className="px-6 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                       <button onClick={() => handleOpenDetail(exp)} className="p-2 text-[#64748B] hover:text-[#4F46E5] hover:bg-[#EEF2FF] rounded-lg transition-all">
+                  <td className="px-6 py-6 text-right">
+                     <span className="text-[13px] font-black text-slate-400 uppercase tracking-tight">{exp.currency} {exp.amount.toLocaleString()}</span>
+                  </td>
+                  <td className="px-6 py-6 text-right">
+                     <div className="text-[14px] font-black text-white uppercase tracking-tight">${(exp.convertedAmount || exp.amount).toLocaleString()}</div>
+                     <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-0.5">USD SYNC</div>
+                  </td>
+                  <td className="px-6 py-6">
+                     <div className="flex items-center gap-2">
+                        <div className={`w-1.5 h-1.5 rounded-full ${exp.currentApprover ? 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'bg-slate-800'}`} />
+                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-tight italic">
+                           {exp.currentApprover ? exp.currentApprover.name.split(' ')[0] : 'NONE'}
+                        </span>
+                     </div>
+                  </td>
+                  <td className="px-6 py-6 text-center">
+                    <span className={`inline-flex px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
+                      exp.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
+                      exp.status === 'rejected' ? 'bg-red-500/10 text-red-500 border-red-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                    }`}>
+                      {exp.status === 'pending' ? 'Review' : exp.status}
+                    </span>
+                  </td>
+                  <td className="px-8 py-6 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                       <button onClick={() => handleOpenDetail(exp)} className="p-3 bg-white/5 border border-white/10 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-md">
                          <Eye size={18} />
                        </button>
                        {exp.status === 'pending' && (
-                         <button onClick={() => handleOpenDetail(exp)} className="p-2 text-[#D97706] hover:bg-[#FFFBEB] rounded-lg transition-all">
+                         <button onClick={() => handleOpenDetail(exp)} className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-500 hover:text-white hover:bg-amber-500 rounded-xl transition-all shadow-md">
                            <ShieldAlert size={18} />
                          </button>
                        )}
@@ -166,134 +188,165 @@ const AdminExpenses = () => {
             </tbody>
           </table>
           
-          <div className="px-6 py-4 border-t border-[#F1F5F9] flex items-center justify-between">
-             <span className="text-[13px] text-[#64748B]">Showing {((page-1)*10)+1} - {Math.min(page*10, total)} of {total}</span>
-             <div className="flex gap-2">
-                <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-1.5 border border-[#E2E8F0] rounded-md hover:bg-[#F8FAFC] disabled:opacity-30"><ChevronLeft size={18} /></button>
-                <button disabled={page * 10 >= total} onClick={() => setPage(p => p + 1)} className="p-1.5 border border-[#E2E8F0] rounded-md hover:bg-[#F8FAFC] disabled:opacity-30"><ChevronRight size={18} /></button>
+          <div className="px-8 py-6 border-t border-white/5 flex items-center justify-between bg-white/[0.01]">
+             <span className="text-[10px] text-slate-600 font-black uppercase tracking-[0.2em] italic italic">Registry Slice {((page-1)*10)+1} - {Math.min(page*10, total)} / {total} Total</span>
+             <div className="flex gap-3">
+                <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-3 bg-white/5 border border-white/10 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 disabled:opacity-20 transition-all"><ChevronLeft size={18} /></button>
+                <button disabled={page * 10 >= total} onClick={() => setPage(p => p + 1)} className="p-3 bg-white/5 border border-white/10 rounded-xl text-slate-500 hover:text-white hover:bg-white/10 disabled:opacity-20 transition-all"><ChevronRight size={18} /></button>
              </div>
           </div>
         </div>
 
-        {/* Expense Detail Drawer */}
-        {showDetail && (
-          <div className="fixed inset-0 z-[200]">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setShowDetail(false)} />
-            <div className="absolute right-0 top-0 h-full w-[520px] bg-white shadow-2xl flex flex-col animate-slideInRight overflow-hidden">
-               <div className="h-16 px-6 border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
-                  <h3 className="text-[18px] font-bold text-[#0F172A]">Verification Detail</h3>
-                  <button onClick={() => setShowDetail(false)} className="p-2 -mr-2 text-[#64748B] hover:bg-[#F8FAFC] rounded-lg transition-colors">
-                    <X size={20} />
-                  </button>
-               </div>
+        {/* Global Inspection Drawer */}
+        <AnimatePresence>
+          {showDetail && (
+            <div className="fixed inset-0 z-[200] flex justify-end">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity" onClick={() => setShowDetail(false)} />
+              <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative h-full w-full max-w-xl bg-slate-900 border-l border-white/10 shadow-3xl flex flex-col">
+                 <div className="h-24 px-10 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.01]">
+                    <div className="flex items-center gap-4">
+                       <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                          <Terminal size={24} />
+                       </div>
+                       <div>
+                          <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Inspection Lab</h3>
+                          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Transaction Verification Protocol</p>
+                       </div>
+                    </div>
+                    <button onClick={() => setShowDetail(false)} className="p-3 -mr-2 text-slate-600 hover:bg-white/5 rounded-2xl transition-all">
+                      <X size={24} />
+                    </button>
+                 </div>
 
-               <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
-                  {/* Info Grid */}
-                  <div className="grid grid-cols-2 gap-y-6 bg-[#F8FAFC] p-6 rounded-xl border border-[#E2E8F0]">
-                     <div className="space-y-1">
-                        <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Employee</span>
-                        <div className="flex items-center gap-2">
-                           <div className="w-6 h-6 rounded-full bg-[#6366F1] flex items-center justify-center text-white text-[10px] font-bold">
-                             {selectedExpense?.employee?.name.charAt(0)}
+                 <div className="flex-1 overflow-y-auto p-10 space-y-10 scrollbar-hide bg-gradient-to-b from-slate-900 to-slate-950">
+                    {/* Telemetry Grid */}
+                    <div className="grid grid-cols-2 gap-6 bg-white/[0.02] border border-white/5 p-8 rounded-[2rem] shadow-inner relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
+                          <Activity size={100} className="text-indigo-500" />
+                       </div>
+                       <div className="space-y-2 relative z-10">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Originator</span>
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-[10px] font-black uppercase">
+                               {selectedExpense?.employee?.name.charAt(0)}
+                             </div>
+                             <span className="text-[15px] font-black text-white uppercase tracking-tight italic">{selectedExpense?.employee?.name}</span>
+                          </div>
+                       </div>
+                       <div className="space-y-2 relative z-10">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Allocation Target</span>
+                          <div className="flex items-center gap-2">
+                             <span className="px-3 py-1 bg-white/5 border border-white/5 rounded-lg text-[11px] font-black text-slate-300 uppercase italic tracking-widest">{selectedExpense?.category}</span>
+                          </div>
+                       </div>
+                       <div className="space-y-2 relative z-10">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Disbursement Val</span>
+                          <span className="block text-2xl font-black text-white italic tracking-tighter uppercase">{selectedExpense?.currency} {selectedExpense?.amount.toLocaleString()}</span>
+                       </div>
+                       <div className="space-y-2 relative z-10">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">Timestamp Node</span>
+                          <span className="block text-[15px] font-black text-slate-400 uppercase tracking-widest italic">{new Date(selectedExpense?.date).toLocaleDateString()}</span>
+                       </div>
+                    </div>
+
+                    {/* Receipt Evidence */}
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 italic flex items-center gap-2">
+                         <FileText size={14} className="text-indigo-500" /> Empirical Evidence (Receipt)
+                      </label>
+                      {selectedExpense?.receiptUrl ? (
+                        <div className="group relative w-full aspect-video rounded-[2rem] border-2 border-dashed border-white/5 overflow-hidden cursor-pointer hover:border-indigo-500/30 transition-all shadow-inner">
+                          <img src={selectedExpense.receiptUrl} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" alt="audit_doc" />
+                          <div className="absolute inset-0 bg-indigo-950/40 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity">
+                             <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white mb-4">
+                                <Search size={24} />
+                             </div>
+                             <span className="text-white text-[10px] font-black uppercase tracking-[0.3em]">Launch Inspector</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-12 bg-white/[0.01] border border-dashed border-white/5 rounded-[2rem] text-center">
+                           <p className="text-[10px] text-slate-800 font-black uppercase tracking-[0.4em] italic leading-relaxed">No Document Evidence Found In Buffer</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Logic Timeline */}
+                    <div className="space-y-8">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 italic flex items-center gap-2">
+                         <Layers size={14} className="text-indigo-500" /> Sequential Logic Chain
+                      </label>
+                      <div className="space-y-8 relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-[1px] before:bg-white/5">
+                         {approvalHistory.map((req, idx) => (
+                           <div key={idx} className="relative pl-12 space-y-2 group">
+                              <div className={`absolute left-0 top-0 w-8 h-8 rounded-2xl border-2 border-slate-900 group-hover:scale-110 transition-transform flex items-center justify-center text-white z-10 shadow-lg ${
+                                req.status === 'approved' ? 'bg-emerald-500 shadow-emerald-500/20' : (req.status === 'rejected' ? 'bg-red-500 shadow-red-500/20' : 'bg-slate-800')
+                              }`}>
+                                 {req.status === 'approved' ? <CheckCircle size={16} className="stroke-[3]" /> : (req.status === 'rejected' ? <XCircle size={16} className="stroke-[3]" /> : <Clock size={16} className="text-slate-500" />)}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                 <div className="flex items-center gap-3">
+                                    <span className="text-[14px] font-black text-white uppercase tracking-tight italic">{req.approver?.name}</span>
+                                    <span className="px-2 py-0.5 bg-white/5 border border-white/5 text-slate-500 text-[9px] font-black rounded uppercase tracking-widest italic">Node {req.step === -1 ? 'Manager' : `Step ${req.step + 1}`}</span>
+                                 </div>
+                                 {req.decidedAt && <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">{new Date(req.decidedAt).toLocaleDateString()}</span>}
+                              </div>
+                              <div className={`text-[10px] font-black uppercase tracking-[0.2em] ${req.status === 'approved' ? 'text-emerald-500' : (req.status === 'rejected' ? 'text-red-500' : 'text-slate-600')}`}>
+                                 {req.status === 'pending' ? 'Operational' : req.status}
+                              </div>
+                              {req.comment && (
+                                 <div className="border-l-2 border-indigo-500/30 bg-white/[0.02] p-4 rounded-r-2xl border-y border-r border-white/5">
+                                    <p className="text-[12px] text-slate-400 italic leading-relaxed">"{req.comment}"</p>
+                                 </div>
+                              )}
                            </div>
-                           <span className="text-[14px] font-semibold text-[#0F172A]">{selectedExpense?.employee?.name}</span>
-                        </div>
-                     </div>
-                     <div className="space-y-1">
-                        <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Category</span>
-                        <div className="flex items-center gap-2 text-[14px] font-semibold text-[#0F172A]">
-                           <span className="px-2 py-0.5 bg-[#E2E8F0] text-[#475569] rounded text-[11px]">{selectedExpense?.category}</span>
-                        </div>
-                     </div>
-                     <div className="space-y-1">
-                        <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Orig. Amount</span>
-                        <span className="block text-[15px] font-bold text-[#0F172A]">{selectedExpense?.currency} {selectedExpense?.amount.toLocaleString()}</span>
-                     </div>
-                     <div className="space-y-1">
-                        <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Date Submitted</span>
-                        <span className="block text-[15px] font-bold text-[#0F172A]">{new Date(selectedExpense?.date).toLocaleDateString()}</span>
-                     </div>
-                  </div>
-
-                  {/* Receipt */}
-                  <div className="space-y-3">
-                    <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide flex items-center gap-2">
-                       <FileText size={14} className="text-[#6366F1]" /> Receipt Document
-                    </label>
-                    {selectedExpense?.receiptUrl ? (
-                      <div className="group relative w-32 h-32 rounded-lg border-2 border-[#E2E8F0] overflow-hidden cursor-pointer hover:border-[#6366F1] transition-all">
-                        <img src={selectedExpense.receiptUrl} className="w-full h-full object-cover" alt="receipt" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                           <span className="text-white text-[11px] font-bold">Open Link</span>
-                        </div>
+                         ))}
                       </div>
-                    ) : (
-                      <p className="p-6 bg-gray-50 border border-dashed border-[#E2E8F0] rounded-xl text-center text-[#94A3B8] text-[13px]">No receipt attached</p>
-                    )}
-                  </div>
+                    </div>
 
-                  {/* Timeline */}
-                  <div className="space-y-6">
-                    <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide flex items-center gap-2">
-                       <ShieldAlert size={14} className="text-[#6366F1]" /> Approval Sequence
-                    </label>
-                    <div className="space-y-6 relative before:absolute before:left-[13px] before:top-2 before:bottom-2 before:w-[1px] before:bg-[#E2E8F0]">
-                       {approvalHistory.map((req, idx) => (
-                         <div key={idx} className="relative pl-9 space-y-1.5">
-                            <div className={`absolute left-0 top-1 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white z-10 ${
-                              req.status === 'approved' ? 'bg-[#10B981]' : (req.status === 'rejected' ? 'bg-[#EF4444]' : 'bg-[#E2E8F0]')
-                            }`}>
-                               {req.status === 'approved' ? <CheckCircle size={14} /> : (req.status === 'rejected' ? <XCircle size={14} /> : <Clock size={14} className="text-[#64748B]" />)}
-                            </div>
-                            <div className="flex items-center justify-between">
-                               <div className="flex items-center gap-2">
-                                  <span className="text-[14px] font-bold text-[#0F172A]">{req.approver?.name}</span>
-                                  <span className="px-1.5 py-0.5 bg-[#F1F5F9] text-[#64748B] text-[10px] font-bold rounded uppercase">Step {req.step === -1 ? 'Direct' : req.step + 1}</span>
-                               </div>
-                               {req.decidedAt && <span className="text-[11px] text-[#94A3B8]">{new Date(req.decidedAt).toLocaleDateString()}</span>}
-                            </div>
-                            <div className={`text-[11px] font-bold uppercase ${req.status === 'approved' ? 'text-[#059669]' : (req.status === 'rejected' ? 'text-[#DC2626]' : 'text-[#64748B]')}`}>
-                               {req.status}
-                            </div>
-                            {req.comment && (
-                               <div className="border-l-4 border-[#E2E8F0] bg-[#F8FAFC] p-3 rounded-r-lg">
-                                  <p className="text-[12px] text-[#64748B] italic">"{req.comment}"</p>
-                               </div>
-                            )}
+                    {/* Admin Force Override */}
+                    {selectedExpense?.status === 'pending' && (
+                      <div className="pt-10 border-t border-white/5 space-y-8 pb-10">
+                         <div className="flex items-center gap-4 p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] shadow-inner">
+                            <ShieldAlert size={24} className="text-indigo-400 shrink-0" />
+                            <p className="text-[11px] text-indigo-300 font-black uppercase tracking-widest leading-relaxed italic">Administrative Override Active: Executing an override bypasses all logic nodes. Action is non-reversible.</p>
                          </div>
-                       ))}
-                    </div>
-                  </div>
+                         
+                         <div className="space-y-4">
+                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-1 italic italic">Root Justification (Comment)</label>
+                           <textarea 
+                             placeholder="E.G. EMERGENCY CLEARANCE"
+                             className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-sm text-white font-black uppercase outline-none h-32 focus:border-indigo-500 transition-all placeholder:text-slate-800"
+                             value={overrideComment} onChange={(e) => setOverrideComment(e.target.value)}
+                           />
+                         </div>
 
-                  {/* Admin Override */}
-                  {selectedExpense?.status === 'pending' && (
-                    <div className="pt-8 border-t border-[#E2E8F0] space-y-6">
-                       <div className="flex items-center gap-2 p-3 bg-[#EEF2FF] border border-[#CBD5E1] rounded-lg">
-                          <ShieldAlert size={18} className="text-[#4F46E5] shrink-0" />
-                          <p className="text-[12px] text-[#1E40AF] font-medium leading-relaxed">Admin override bypasses all pending approval steps. Action is permanent.</p>
-                       </div>
-                       
-                       <div className="space-y-2">
-                         <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide">Override Comment (Optional)</label>
-                         <textarea 
-                           className="w-full border border-[#D1D5DB] rounded-lg p-3 text-[14px] outline-none h-20"
-                           value={overrideComment} onChange={(e) => setOverrideComment(e.target.value)}
-                         />
-                       </div>
-
-                       <div className="grid grid-cols-2 gap-4">
-                         <button onClick={() => handleOverride('approve')} className="h-11 bg-[#10B981] hover:bg-[#059669] text-white font-bold rounded-lg transition-all">Force Approve</button>
-                         <button onClick={() => handleOverride('reject')} className="h-11 bg-[#EF4444] hover:bg-[#DC2626] text-white font-bold rounded-lg transition-all">Force Reject</button>
-                       </div>
-                    </div>
-                  )}
-               </div>
+                         <div className="grid grid-cols-2 gap-6 pb-2">
+                           <button onClick={() => handleOverride('approve')} className="h-14 bg-emerald-600 shadow-xl shadow-emerald-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-emerald-500 transition-all">Command Approve</button>
+                           <button onClick={() => handleOverride('reject')} className="h-14 bg-red-600 shadow-xl shadow-red-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-red-500 transition-all">Command Reject</button>
+                         </div>
+                      </div>
+                    )}
+                 </div>
+              </motion.div>
             </div>
-          </div>
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </AdminLayout>
   );
 };
+
+const TableLoader = ({ rows }) => (
+  <tbody className="divide-y divide-white/5">
+    {[...Array(rows)].map((_, i) => (
+      <tr key={i} className="animate-pulse">
+        <td colSpan="7" className="px-8 py-6">
+           <div className="h-12 bg-white/5 rounded-2xl w-full" />
+        </td>
+      </tr>
+    ))}
+  </tbody>
+);
 
 export default AdminExpenses;

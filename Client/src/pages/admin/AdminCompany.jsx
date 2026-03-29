@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import api from '../../lib/axios.js';
-import { Building2, Save, MapPin, Globe, CreditCard, Lock, Users, Shield, ArrowRight, DollarSign, Plus } from 'lucide-react';
+import { Building2, Save, MapPin, Globe, CreditCard, Lock, Users, Shield, ArrowRight, DollarSign, Plus, Settings2, Activity, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 
 const AdminCompany = () => {
   const [company, setCompany] = useState(null);
@@ -30,7 +31,7 @@ const AdminCompany = () => {
       });
       setCounts(roles);
     } catch {
-      toast.error('Failed to load company data');
+      toast.error('Failed to load organizational data');
     } finally {
       setLoading(false);
     }
@@ -42,118 +43,153 @@ const AdminCompany = () => {
     e.preventDefault();
     try {
       await api.patch('/admin/company', { name });
-      toast.success('Settings saved');
+      toast.success('System: Settings synchronized');
     } catch {
-      toast.error('Failed to save settings');
+      toast.error('Failed to update settings');
     }
   };
 
-  if (loading) return <AdminLayout title="Company Settings"><div className="animate-pulse bg-white border h-64 rounded-xl"></div></AdminLayout>;
+  if (loading) return <AdminLayout title="System Settings"><div className="animate-pulse bg-white/5 h-64 rounded-[2.5rem]"></div></AdminLayout>;
 
   return (
-    <AdminLayout title="Company Settings">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-[#E2E8F0] rounded-[10px] shadow-sm overflow-hidden">
-             <div className="px-6 py-4 border-b border-[#F1F5F9] bg-[#F8FAFC]">
-                <h3 className="text-[16px] font-bold text-[#0F172A] flex items-center gap-2">
-                  <Building2 size={18} className="text-[#6366F1]" /> General Settings
-                </h3>
+    <AdminLayout title="Organizational Core" subtitle="Global Identity & Financial Configuration">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 animate-in fade-in duration-500 pb-20">
+        
+        {/* Left Column - Core Settings */}
+        <div className="lg:col-span-2 space-y-10">
+          <div className="glass-card rounded-[2.5rem] border-white/5 bg-white/[0.01] overflow-hidden shadow-2xl">
+             <div className="px-10 py-8 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                    <Building2 size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Entity Profile</h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Define primary organization identity</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
+                   <span className="text-[9px] text-slate-600 font-black uppercase tracking-widest italic">Sync Active</span>
+                </div>
              </div>
-             <form onSubmit={handleSave} className="p-6 space-y-6">
-                <div className="space-y-1.5">
-                   <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide">Company Display Name</label>
+             
+             <form onSubmit={handleSave} className="p-10 space-y-8">
+                <div className="space-y-4">
+                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-1 italic">Corporate Label</label>
                    <input 
-                     type="text" className="w-full h-11 border border-[#D1D5DB] rounded-lg px-4 outline-none focus:ring-2 focus:ring-[#6366F1]/20 focus:border-[#6366F1] transition-all"
+                     type="text" 
+                     className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm text-white font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-inner placeholder:text-slate-800"
                      value={name} onChange={(e) => setName(e.target.value)}
+                     placeholder="ENTITY DISLAY NAME"
                    />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-1.5 opacity-70">
-                      <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide flex items-center gap-1.5">
-                         Country <Lock size={12} />
+                <div className="grid grid-cols-2 gap-8">
+                   <div className="space-y-4 opacity-70 group">
+                      <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] px-1 italic flex items-center gap-2">
+                         Geographic Node <Lock size={12} className="text-slate-700" />
                       </label>
-                      <div className="w-full h-11 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg flex items-center px-4 text-[14px] text-[#475569] font-medium gap-2">
-                         <Globe size={16} /> {company?.country}
+                      <div className="w-full h-14 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center px-6 text-[11px] text-slate-400 font-black uppercase tracking-widest gap-4 shadow-inner group-hover:border-white/10 transition-all cursor-not-allowed">
+                         <Globe size={18} className="text-slate-700" /> {company?.country}
                       </div>
                    </div>
-                   <div className="space-y-1.5 opacity-70">
-                      <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide flex items-center gap-1.5">
-                         Base Currency <Lock size={12} />
+                   <div className="space-y-4 opacity-70 group">
+                      <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] px-1 italic flex items-center gap-2">
+                         Monetary Base <Lock size={12} className="text-slate-700" />
                       </label>
-                      <div className="w-full h-11 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg flex items-center px-4 text-[14px] text-[#475569] font-medium gap-2">
-                         <CreditCard size={16} /> {company?.currency}
+                      <div className="w-full h-14 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center px-6 text-[11px] text-slate-400 font-black uppercase tracking-widest gap-4 shadow-inner group-hover:border-white/10 transition-all cursor-not-allowed">
+                         <CreditCard size={18} className="text-slate-700" /> {company?.currency}
                       </div>
                    </div>
                 </div>
                 
-                <p className="text-[11px] text-[#64748B] italic">Currency and Country are locked after signup for financial audit integrity. Contact support for changes.</p>
+                <div className="p-6 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex items-start gap-4">
+                   <Shield size={20} className="text-amber-500 shrink-0 mt-0.5" />
+                   <p className="text-[10px] text-amber-500/80 font-bold uppercase tracking-widest leading-relaxed italic">Immutable Vectors: Region and Currency are locked in the kernel to maintain financial audit integrity. Please contact system architecture support for modifications.</p>
+                </div>
                 
-                <div className="flex justify-end pt-4 border-t border-[#F1F5F9]">
-                   <button type="submit" className="bg-[#4F46E5] text-white h-11 px-8 rounded-lg font-bold hover:bg-[#4338CA] transition-all shadow-md">
-                      Save Changes
+                <div className="flex justify-end pt-8 border-t border-white/5">
+                   <button type="submit" className="h-14 bg-indigo-600 text-white font-black px-10 rounded-2xl uppercase tracking-widest text-[11px] shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all flex items-center gap-3">
+                      <Save size={18} /> Synchronize Matrix
                    </button>
                 </div>
              </form>
           </div>
 
-          <div className="bg-white border border-[#E2E8F0] rounded-[10px] shadow-sm p-6">
-             <h3 className="text-[14px] font-bold text-[#0F172A] uppercase tracking-wider mb-6 flex items-center gap-2">
-                <Users size={16} className="text-[#6366F1]" /> Team Overview
-             </h3>
-             <div className="grid grid-cols-3 gap-6">
-                <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-center">
-                   <span className="block text-[24px] font-bold text-[#0F172A]">{counts.employee}</span>
-                   <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Employees</span>
+          {/* Team Snapshot */}
+          <div className="glass-card rounded-[2.5rem] border-white/5 p-10 bg-white/[0.01] shadow-2xl relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Users size={120} className="text-indigo-500" />
+             </div>
+             <div className="flex items-center gap-4 mb-10 relative z-10">
+                <div className="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
+                   <Activity size={18} />
                 </div>
-                <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-center">
-                   <span className="block text-[24px] font-bold text-[#0F172A]">{counts.manager}</span>
-                   <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Managers</span>
+                <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Identity Allocation Overview</h3>
+             </div>
+             <div className="grid grid-cols-3 gap-10 relative z-10">
+                <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] text-center hover:bg-white/[0.05] transition-all shadow-inner">
+                   <span className="block text-4xl font-black text-white italic tracking-tighter mb-2">{counts.employee}</span>
+                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Active Employees</span>
                 </div>
-                <div className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-center">
-                   <span className="block text-[24px] font-bold text-[#0F172A]">{counts.admin}</span>
-                   <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wide">Admins</span>
+                <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] text-center hover:bg-white/[0.05] transition-all shadow-inner">
+                   <span className="block text-4xl font-black text-white italic tracking-tighter mb-2">{counts.manager}</span>
+                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Authority Figures</span>
+                </div>
+                <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] text-center hover:bg-white/[0.05] transition-all shadow-inner">
+                   <span className="block text-4xl font-black text-white italic tracking-tighter mb-2">{counts.admin}</span>
+                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Kernel Admins</span>
                 </div>
              </div>
           </div>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-6">
-           <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-6 shadow-sm">
-              <div className="w-10 h-10 bg-[#EEF2FF] rounded-full flex items-center justify-center text-[#4F46E5] mb-4">
-                 <DollarSign size={20} />
+        {/* Right Column - Secondary Config */}
+        <div className="space-y-10">
+           {/* Currency Focus */}
+           <div className="glass-card rounded-[2.5rem] border-white/5 p-10 bg-white/[0.01] shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                 <DollarSign size={80} className="text-indigo-500" />
               </div>
-              <h4 className="text-[14px] font-bold text-[#0F172A] mb-1">Currency Localisation</h4>
-              <span className="text-[32px] font-bold text-[#6366F1]">{company?.currency}</span>
-              <p className="text-[12px] text-[#64748B] mt-2 leading-relaxed font-medium">All expense amounts are automatically converted to this currency at submission using live exchange rates.</p>
+              <div className="w-14 h-14 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400 mb-8 shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
+                 <Zap size={24} />
+              </div>
+              <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2 italic">Monetary Globalisation</h4>
+              <div className="text-6xl font-black text-white italic tracking-tighter">{company?.currency}</div>
+              <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-6 leading-relaxed italic">* Unified base currency for automated conversion across all telemetry nodes.</p>
            </div>
 
-           <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-6 shadow-sm">
-              <h4 className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide mb-4">Active Rules Summary</h4>
-              <div className="space-y-3">
+           {/* Policy Registry Summary */}
+           <div className="glass-card rounded-[2.5rem] border-white/5 p-10 bg-white/[0.01] shadow-2xl">
+              <div className="flex items-center gap-3 mb-8 px-1">
+                 <Settings2 size={16} className="text-indigo-500" />
+                 <h4 className="text-[11px] font-black text-white uppercase tracking-widest italic">Strategy Engine Slice</h4>
+              </div>
+              <div className="space-y-4">
                  {rules.slice(0, 3).map(rule => (
-                    <div key={rule._id} className="flex flex-col">
-                       <span className="text-[14px] font-medium text-[#0F172A]">{rule.name}</span>
-                       <span className={`text-[10px] font-bold uppercase w-fit px-1.5 rounded mt-0.5 ${
-                          rule.conditionType === 'sequential' ? 'text-blue-600 bg-blue-50' : 'text-amber-600 bg-amber-50'
+                    <div key={rule._id} className="flex flex-col gap-1.5 p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-all group">
+                       <span className="text-[12px] font-black text-slate-300 uppercase tracking-tight group-hover:text-indigo-400 transition-colors">{rule.name}</span>
+                       <span className={`text-[8px] font-black uppercase tracking-widest w-fit px-2 py-0.5 rounded-lg border ${
+                          rule.conditionType === 'sequential' ? 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20' : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
                        }`}>{rule.conditionType}</span>
                     </div>
                  ))}
-                 <Link to="/admin/rules" className="block text-[12px] font-bold text-[#6366F1] hover:underline pt-2">Manage rules →</Link>
+                 <Link to="/admin/rules" className="flex items-center gap-3 text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] hover:text-indigo-300 transition-all pt-4 px-1 group">
+                    Logic Matrix Hub <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                 </Link>
               </div>
            </div>
 
-           <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-6 shadow-sm">
-              <h4 className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide mb-4">Quick Actions</h4>
-              <div className="space-y-3">
-                 <Link to="/admin/users" className="flex items-center justify-between w-full h-[38px] px-3 bg-[#4F46E5] text-white text-[13px] font-bold rounded-lg hover:bg-[#4338CA] transition-all">
-                    Add Employee <ArrowRight size={14} />
+           {/* Direct Commands */}
+           <div className="glass-card rounded-[2.5rem] border-white/5 p-10 bg-white/[0.01] shadow-2xl">
+              <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-8 px-1 italic">Identity Transmissions</h4>
+              <div className="space-y-4">
+                 <Link to="/admin/users" className="flex items-center justify-between w-full h-14 px-8 bg-indigo-600 shadow-xl shadow-indigo-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-indigo-50 transition-all hover:text-indigo-900 group">
+                    New Identity <Plus size={16} className="group-hover:rotate-90 transition-transform" />
                  </Link>
-                 <Link to="/admin/rules" className="flex items-center justify-between w-full h-[38px] px-3 border border-[#D1D5DB] text-[#374151] text-[13px] font-bold rounded-lg hover:bg-gray-50 transition-all">
-                    Create Rule <Plus size={14} />
+                 <Link to="/admin/rules" className="flex items-center justify-between w-full h-14 px-8 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl px-6 text-[11px] font-black uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all group shadow-inner">
+                    New Policy <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                  </Link>
               </div>
            </div>

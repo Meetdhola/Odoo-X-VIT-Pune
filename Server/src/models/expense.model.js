@@ -36,10 +36,15 @@ const expenseSchema = new mongoose.Schema({
   receiptUrl: {
     type: String
   },
+  paidBy: {
+    type: String,
+    enum: ['Self', 'Company Card', 'Petty Cash'],
+    default: 'Self'
+  },
   status: {
     type: String,
-    enum: ['pending', 'approved', 'rejected'],
-    default: 'pending'
+    enum: ['draft', 'pending', 'approved', 'rejected'],
+    default: 'draft'
   },
   currentStep: {
     type: Number,

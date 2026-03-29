@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import expenseRoutes from './routes/expense.routes.js';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(cors({
 // Mount Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

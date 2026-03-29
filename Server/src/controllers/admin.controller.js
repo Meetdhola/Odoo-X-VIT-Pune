@@ -29,7 +29,7 @@ export const getManagers = async (req, res) => {
     const managers = await User.find({ 
       companyId: req.user.companyId, 
       role: 'Manager' 
-    }).select('name email');
+    }).select('name email isManagerApprover');
 
     res.status(200).json({
       success: true,
@@ -45,7 +45,7 @@ export const getManagers = async (req, res) => {
 // @access  Private/Admin
 export const createUser = async (req, res) => {
   try {
-    const { name, email, role, managerId } = req.body;
+    const { name, email, role, managerId, isManagerApprover } = req.body;
 
     // Check if user exists
     let user = await User.findOne({ email });
@@ -62,6 +62,7 @@ export const createUser = async (req, res) => {
       password,
       role: role || 'Employee',
       managerId: managerId || undefined,
+      isManagerApprover: isManagerApprover || false,
       companyId: req.user.companyId,
       isVerified: true // Admin created users are pre-verified
     });
@@ -104,12 +105,12 @@ export const createUser = async (req, res) => {
   }
 };
 
-// @desc    Update user role or manager
-// @route   PUT /api/admin/users/:id
+// @desc    Update user details
+// @route   PUT /api/admin/users/:id (Actually AdminUsers.jsx uses PATCH /admin/users/:id)
 // @access  Private/Admin
 export const updateUser = async (req, res) => {
   try {
-    const { role, managerId } = req.body;
+    const { role, managerId, isManagerApprover, name } = req.body;
     
     const user = await User.findById(req.params.id);
     if (!user) {
@@ -121,8 +122,10 @@ export const updateUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Not authorized' });
     }
 
+    if (name) user.name = name;
     if (role) user.role = role;
     if (managerId !== undefined) user.managerId = managerId || null;
+    if (isManagerApprover !== undefined) user.isManagerApprover = isManagerApprover;
 
     await user.save();
 

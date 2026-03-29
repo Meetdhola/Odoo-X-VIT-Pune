@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../../components/admin/AdminLayout.jsx';
 import api from '../../lib/axios.js';
-import { Search, UserPlus, MoreVertical, Edit2, Trash2, X, Plus, Check, Minus } from 'lucide-react';
+import { Search, UserPlus, MoreVertical, Edit2, Trash2, X, Plus, Check, Minus, Shield, Mail, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const RoleBadge = ({ role }) => {
   const styles = {
-    Admin: 'bg-[#EEF2FF] text-[#3730A3]',
-    Manager: 'bg-[#EFF6FF] text-[#1E40AF]',
-    Employee: 'bg-[#F3F4F6] text-[#374151]'
+    Admin: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    Manager: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    Employee: 'bg-slate-500/10 text-slate-400 border-slate-500/20'
   };
-  return <span className={`px-2.5 py-0.5 rounded-full text-[12px] font-medium ${styles[role] || styles.Employee}`}>{role}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${styles[role] || styles.Employee}`}>{role}</span>;
 };
 
 const AdminUsers = () => {
@@ -38,7 +39,7 @@ const AdminUsers = () => {
       const { data } = await api.get('/admin/users');
       setUsers(data.users);
     } catch (err) {
-      toast.error('Failed to load users');
+      toast.error('Failed to load user registry');
     } finally {
       setLoading(false);
     }
@@ -77,29 +78,29 @@ const AdminUsers = () => {
     try {
       if (editingUser) {
         await api.patch(`/admin/users/${editingUser._id}`, formData);
-        toast.success('User updated');
+        toast.success('System: User updated successfully');
       } else {
         await api.post('/admin/users', formData);
-        toast.success('User created');
+        toast.success('System: Identiy created in database');
       }
       setShowDrawer(false);
       fetchUsers();
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Operation failed');
+      toast.error(err.response?.data?.error || 'Core logic failure');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (id === currentUser.id) return toast.error('You cannot delete your own account');
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    if (id === currentUser.id) return toast.error('Violation: Cannot self-purge administrator');
+    if (!window.confirm('IRREVERSIBLE: Confirm identity deletions?')) return;
     try {
       await api.delete(`/admin/users/${id}`);
-      toast.success('User deleted');
+      toast.success('Action: Identity purged from registry');
       fetchUsers();
     } catch {
-      toast.error('Deletion failed');
+      toast.error('System error during deletion');
     }
   };
 
@@ -110,89 +111,105 @@ const AdminUsers = () => {
     return matchesSearch && matchesRole;
   });
 
-  const getAvatarColor = (role) => {
-    if (role === 'Admin') return 'bg-[#6366F1]';
-    if (role === 'Manager') return 'bg-[#3B82F6]';
-    return 'bg-[#64748B]';
-  };
-
   return (
-    <AdminLayout title="Users">
-      <div className="space-y-6">
-        {/* Top Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="relative group w-full md:w-[280px]">
-             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={18} />
-             <input 
-               type="text" 
-               placeholder="Search by name or email" 
-               className="w-full h-10 pl-10 pr-4 bg-white border border-[#E2E8F0] rounded-lg text-[14px] focus:ring-2 focus:ring-[#6366F1]/20 outline-none transition-all"
-               value={search}
-               onChange={(e) => setSearch(e.target.value)}
-             />
+    <AdminLayout title="Identity Directory" subtitle="Employee & Manager Access Control">
+      <div className="space-y-8 animate-in fade-in duration-500">
+        
+        {/* Advanced Filter Bar */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+          <div className="flex flex-col gap-3">
+             <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1 italic">Scan Registry</label>
+             <div className="relative group w-full md:w-96">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="NAME OR EMAIL ID..." 
+                  className="w-full h-14 pl-12 pr-4 bg-white/[0.02] border border-white/5 rounded-2xl text-[12px] font-black uppercase text-white placeholder:text-slate-700 focus:border-indigo-500/50 focus:bg-white/[0.04] outline-none transition-all shadow-inner"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+             </div>
           </div>
-          <div className="flex items-center gap-3">
-             <select 
-               className="h-10 px-4 bg-white border border-[#E2E8F0] rounded-lg text-[14px] outline-none"
-               value={roleFilter}
-               onChange={(e) => setRoleFilter(e.target.value)}
-             >
-               <option value="all">All Roles</option>
-               <option value="admin">Admin</option>
-               <option value="manager">Manager</option>
-               <option value="employee">Employee</option>
-             </select>
-             <button onClick={() => handleOpenDrawer()} className="bg-[#4F46E5] text-white h-10 px-4 rounded-lg flex items-center gap-2 font-medium hover:bg-[#4338CA] transition-colors">
-               <UserPlus size={18} /> Add User
-             </button>
+          
+          <div className="flex items-center gap-4">
+             <div className="flex flex-col gap-3">
+                <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1 italic">Filter Cluster</label>
+                <select 
+                  className="h-14 px-6 bg-white/[0.02] border border-white/5 rounded-2xl text-[11px] font-black uppercase text-slate-400 outline-none hover:border-white/10 transition-all cursor-pointer shadow-inner"
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                >
+                  <option value="all">ALL ENTITIES</option>
+                  <option value="admin">ADMINS ONLY</option>
+                  <option value="manager">MANAGERS ONLY</option>
+                  <option value="employee">EMPLOYEES ONLY</option>
+                </select>
+             </div>
+             
+             <div className="flex flex-col gap-3">
+                <div className="h-10 invisible" /> {/* Spacer */}
+                <button onClick={() => handleOpenDrawer()} className="bg-indigo-600 text-white h-14 px-8 rounded-2xl flex items-center gap-3 font-black uppercase text-[11px] tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all">
+                  <UserPlus size={18} /> Create Identity
+                </button>
+             </div>
           </div>
         </div>
 
-        {/* table */}
-        <div className="bg-white border border-[#E2E8F0] rounded-[10px] overflow-hidden shadow-sm">
+        {/* Directory Table */}
+        <div className="glass-card rounded-[2.5rem] border-white/5 overflow-hidden shadow-2xl bg-white/[0.01]">
           <table className="w-full text-left border-collapse">
-            <thead className="bg-[#F8FAFC] border-b-[1.5px] border-[#E2E8F0]">
-               <tr>
-                 <th className="px-6 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">User</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Role</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Manager</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider text-center">Is Approver</th>
-                 <th className="px-4 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Joined</th>
-                 <th className="px-6 py-4 text-[11px] font-bold text-[#64748B] uppercase tracking-wider text-right">Actions</th>
+            <thead>
+               <tr className="bg-white/[0.01]">
+                 <th className="px-8 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Identity</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Role Category</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Reports To</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-center">Appr. Flag</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Onboarded</th>
+                 <th className="px-8 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Actions</th>
                </tr>
             </thead>
-            <tbody className="divide-y divide-[#F1F5F9]">
+            <tbody className="divide-y divide-white/5">
               {loading ? (
-                [1, 2, 3].map(i => <tr key={i} className="animate-pulse h-[60px]"><td colSpan="6" className="bg-gray-50/50"></td></tr>)
+                <TableLoader rows={5} />
               ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan="6" className="px-6 py-12 text-center text-[#94A3B8] text-[14px]">No users found</td></tr>
+                <tr><td colSpan="6" className="px-8 py-24 text-center text-slate-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No Identities Detected In Local Buffer</td></tr>
               ) : filteredUsers.map((user) => (
-                <tr key={user._id} className="hover:bg-[#F8FAFC] transition-colors border-b border-[#F1F5F9]">
-                  <td className="px-6 py-3">
-                    <div className="flex items-center gap-3">
-                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[12px] font-bold ${getAvatarColor(user.role)}`}>
+                <tr key={user._id} className="hover:bg-indigo-500/[0.02] transition-colors border-b border-white/5 last:border-0 group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-black uppercase shadow-inner group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
                          {user.name.charAt(0)}
                        </div>
                        <div className="flex flex-col">
-                         <span className="text-[14px] font-medium text-[#0F172A] leading-none mb-1">{user.name}</span>
-                         <span className="text-[12px] text-[#64748B] leading-none">{user.email}</span>
+                         <span className="text-[14px] font-black text-white uppercase tracking-tight leading-none mb-1.5">{user.name}</span>
+                         <span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest leading-none italic">{user.email}</span>
                        </div>
                     </div>
                   </td>
-                  <td className="px-4"><RoleBadge role={user.role} /></td>
-                  <td className="px-4 text-[14px] text-[#0F172A] font-medium">{user.managerId?.name || <span className="text-[#94A3B8]">--</span>}</td>
-                  <td className="px-4 text-center">
-                    {user.isManagerApprover ? <Check className="mx-auto text-[#10B981]" size={18} /> : <Minus className="mx-auto text-[#94A3B8]" size={18} />}
+                  <td className="px-6 py-6 italic"><RoleBadge role={user.role} /></td>
+                  <td className="px-6 py-6">
+                     <span className="text-[12px] font-black text-slate-400 uppercase tracking-tight italic">{user.managerId?.name || <span className="text-slate-800 tracking-widest">NONE</span>}</span>
                   </td>
-                  <td className="px-4 text-[13px] text-[#64748B]">
+                  <td className="px-6 py-6">
+                    {user.isManagerApprover ? (
+                      <div className="w-6 h-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-500 mx-auto shadow-lg shadow-emerald-500/10">
+                        <Check size={14} className="stroke-[3]" />
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-lg bg-white/5 border border-white/5 flex items-center justify-center text-slate-800 mx-auto">
+                        <Minus size={14} />
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-6 text-[11px] text-slate-600 font-bold uppercase tracking-widest italic">
                     {new Date(user.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                   </td>
-                  <td className="px-6 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                       <button onClick={() => handleOpenDrawer(user)} className="p-2 text-[#64748B] hover:text-[#4F46E5] hover:bg-[#EEF2FF] rounded-lg transition-all">
+                  <td className="px-8 py-6 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                       <button onClick={() => handleOpenDrawer(user)} className="p-3 bg-white/5 border border-white/10 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-all shadow-md">
                          <Edit2 size={16} />
                        </button>
-                       <button onClick={() => handleDelete(user._id)} className="p-2 text-[#64748B] hover:text-[#EF4444] hover:bg-[#FEE2E2] rounded-lg transition-all">
+                       <button onClick={() => handleDelete(user._id)} className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 hover:text-white hover:bg-red-500 rounded-xl transition-all shadow-md">
                          <Trash2 size={16} />
                        </button>
                     </div>
@@ -203,112 +220,136 @@ const AdminUsers = () => {
           </table>
         </div>
 
-        {/* Right Drawer */}
-        {showDrawer && (
-          <div className="fixed inset-0 z-[200]">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setShowDrawer(false)} />
-            <div className="absolute right-0 top-0 h-full w-[420px] bg-white shadow-2xl flex flex-col transform transition-transform animate-slideInRight">
-               <div className="h-16 px-6 border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
-                  <h3 className="text-[18px] font-bold text-[#0F172A]">{editingUser ? 'Edit User' : 'Add User'}</h3>
-                  <button onClick={() => setShowDrawer(false)} className="p-2 -mr-2 text-[#64748B] hover:bg-[#F8FAFC] rounded-lg transition-colors">
-                    <X size={20} />
-                  </button>
-               </div>
-               
-               <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-hide">
-                  <div className="space-y-1">
-                    <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide">Full Name</label>
-                    <input 
-                      type="text" 
-                      required 
-                      className="w-full h-10 border border-[#D1D5DB] rounded-lg px-3 outline-none focus:ring-2 focus:ring-[#6366F1]/20 focus:border-[#6366F1] transition-all"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    />
-                  </div>
-                  
-                  <div className="space-y-1">
-                    <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide">Email Address</label>
-                    <input 
-                      type="email" 
-                      required 
-                      readOnly={!!editingUser}
-                      className={`w-full h-10 border border-[#D1D5DB] rounded-lg px-3 outline-none focus:ring-2 focus:ring-[#6366F1]/20 focus:border-[#6366F1] transition-all ${editingUser ? 'bg-[#F8FAFC] cursor-not-allowed' : ''}`}
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    />
-                  </div>
-
-                  {!editingUser && (
-                    <div className="space-y-1">
-                      <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide">Temporary Password</label>
-                      <input 
-                        type="password" 
-                        required 
-                        className="w-full h-10 border border-[#D1D5DB] rounded-lg px-3 outline-none focus:ring-2 focus:ring-[#6366F1]/20 focus:border-[#6366F1] transition-all"
-                        value={formData.password}
-                        onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      />
+        {/* Premium Dark Drawer Overlay */}
+        <AnimatePresence>
+          {showDrawer && (
+            <div className="fixed inset-0 z-[200] flex justify-end">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity" onClick={() => setShowDrawer(false)} />
+              <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative h-full w-full max-w-md bg-slate-900 border-l border-white/10 shadow-3xl flex flex-col">
+                 <div className="h-24 px-10 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.01]">
+                    <div>
+                       <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">{editingUser ? 'Update Insight' : 'New Identity'}</h3>
+                       <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Modify access permissions</p>
                     </div>
-                  )}
+                    <button onClick={() => setShowDrawer(false)} className="p-3 -mr-2 text-slate-600 hover:bg-white/5 rounded-2xl transition-all">
+                      <X size={24} />
+                    </button>
+                 </div>
+                 
+                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-8 scrollbar-hide bg-gradient-to-b from-slate-900 to-slate-950">
+                    <FormInput 
+                       label="Legal Name" 
+                       icon={<Shield size={16} />}
+                       value={formData.name}
+                       onChange={(v) => setFormData({...formData, name: v})}
+                       placeholder="SAM ROGERS"
+                    />
+                    
+                    <FormInput 
+                       label="Email Vector" 
+                       icon={<Mail size={16} />}
+                       value={formData.email}
+                       onChange={(v) => setFormData({...formData, email: v})}
+                       placeholder="USER@DOMAIN.COM"
+                       readOnly={!!editingUser}
+                    />
 
-                  <div className="space-y-1">
-                    <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide">Role</label>
-                    <select 
-                      className="w-full h-10 border border-[#D1D5DB] rounded-lg px-3 outline-none focus:ring-2 focus:ring-[#6366F1]/20 focus:border-[#6366F1] transition-all"
-                      value={formData.role}
-                      onChange={(e) => setFormData({...formData, role: e.target.value})}
-                    >
-                      <option value="Employee">Employee</option>
-                      <option value="Manager">Manager</option>
-                      <option value="Admin">Admin</option>
-                    </select>
-                  </div>
+                    {!editingUser && (
+                       <FormInput 
+                          label="Initial Key" 
+                          icon={<Calendar size={16} />}
+                          type="password"
+                          value={formData.password}
+                          onChange={(v) => setFormData({...formData, password: v})}
+                          placeholder="••••••••"
+                       />
+                    )}
 
-                  {formData.role === 'Employee' && (
-                    <div className="space-y-1">
-                      <label className="text-[12px] font-bold text-[#64748B] uppercase tracking-wide">Assign Manager</label>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 italic">Structural Role</label>
                       <select 
-                        className="w-full h-10 border border-[#D1D5DB] rounded-lg px-3 outline-none"
-                        value={formData.managerId}
-                        onChange={(e) => setFormData({...formData, managerId: e.target.value})}
+                        className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm text-white font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
+                        value={formData.role}
+                        onChange={(e) => setFormData({...formData, role: e.target.value})}
                       >
-                        <option value="">No manager</option>
-                        {users.filter(u => u.role === 'Manager' && u._id !== editingUser?._id).map(u => (
-                          <option key={u._id} value={u._id}>{u.name}</option>
-                        ))}
+                        <option value="Employee">Employee (Normal)</option>
+                        <option value="Manager">Manager (Approver)</option>
+                        <option value="Admin">Administrator (Super)</option>
                       </select>
                     </div>
-                  )}
 
-                  {formData.role === 'Manager' && (
-                    <div className="flex items-center justify-between p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl">
-                       <span className="text-[13px] font-medium text-[#0F172A]">Include as first approver for their direct reports</span>
-                       <button 
-                         type="button"
-                         onClick={() => setFormData({...formData, isManagerApprover: !formData.isManagerApprover})}
-                         className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-1 ${formData.isManagerApprover ? 'bg-[#6366F1]' : 'bg-[#CBD5E1]'}`}
-                       >
-                         <div className={`w-4 h-4 bg-white rounded-full transition-transform ${formData.isManagerApprover ? 'translate-x-5' : 'translate-x-0'}`} />
+                    {formData.role === 'Employee' && (
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 italic">Hierarchy Anchor</label>
+                        <select 
+                          className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm text-white font-black uppercase outline-none"
+                          value={formData.managerId}
+                          onChange={(e) => setFormData({...formData, managerId: e.target.value})}
+                        >
+                          <option value="">No Active Manager</option>
+                          {users.filter(u => u.role === 'Manager' && u._id !== editingUser?._id).map(u => (
+                            <option key={u._id} value={u._id}>{u.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {formData.role === 'Manager' && (
+                      <div className="p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] space-y-4">
+                         <div className="flex items-center justify-between">
+                            <span className="text-[12px] font-black text-white uppercase tracking-tight italic">Approval Rights</span>
+                            <button 
+                              type="button"
+                              onClick={() => setFormData({...formData, isManagerApprover: !formData.isManagerApprover})}
+                              className={`w-12 h-7 rounded-full transition-all relative flex items-center px-1.5 shadow-inner ${formData.isManagerApprover ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                            >
+                              <div className={`w-4 h-4 bg-white rounded-full transition-transform shadow-md ${formData.isManagerApprover ? 'translate-x-5' : 'translate-x-0'}`} />
+                            </button>
+                         </div>
+                         <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed italic">* Permits the manager to audit their team submissions directly.</p>
+                      </div>
+                    )}
+
+                    <div className="pt-10 flex flex-col gap-4">
+                       <button type="submit" disabled={submitting} className="h-14 bg-indigo-600 shadow-xl shadow-indigo-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-indigo-500 transition-all disabled:opacity-50">
+                         {submitting ? 'EXECUTING DATA SYNC...' : editingUser ? 'UPDATE IDENTITY' : 'COMMIT INDENTITY'}
+                       </button>
+                       <button type="button" onClick={() => setShowDrawer(false)} className="h-14 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-white/10 transition-all">
+                          Void Action
                        </button>
                     </div>
-                  )}
-
-                  <div className="pt-6 border-t border-[#E2E8F0] flex flex-col gap-3">
-                     <button type="submit" disabled={submitting} className="bg-[#4F46E5] text-white h-11 rounded-lg font-bold hover:bg-[#4338CA] transition-all disabled:opacity-50">
-                       {submitting ? 'Saving...' : 'Save User'}
-                     </button>
-                     <button type="button" onClick={() => setShowDrawer(false)} className="bg-white border border-[#D1D5DB] text-[#374151] h-11 rounded-lg font-bold hover:bg-gray-50 transition-all">
-                        Cancel
-                     </button>
-                  </div>
-               </form>
+                 </form>
+              </motion.div>
             </div>
-          </div>
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </AdminLayout>
   );
 };
+
+const FormInput = ({ label, icon, value, onChange, type = "text", placeholder, readOnly }) => (
+  <div className="space-y-3">
+    <div className="flex items-center justify-between px-1">
+       <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">{label}</label>
+       {icon && <div className="text-slate-600">{icon}</div>}
+    </div>
+    <input 
+      type={type} 
+      required 
+      readOnly={readOnly}
+      placeholder={placeholder}
+      className={`w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm text-white font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-700 ${readOnly ? 'opacity-40 cursor-not-allowed shadow-inner' : ''}`}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  </div>
+);
+
+const TableLoader = ({ rows }) => (
+  <div className="space-y-6">
+    {[...Array(rows)].map(i => <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />)}
+  </div>
+);
 
 export default AdminUsers;
