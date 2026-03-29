@@ -366,7 +366,7 @@ const AdminExpenses = () => {
 };
 
 const TableLoader = ({ rows }) => (
-  <tbody className="divide-y divide-white/5">
+  <>
     {[...Array(rows)].map((_, i) => (
       <tr key={i} className="animate-pulse">
         <td colSpan="7" className="px-8 py-6">
@@ -374,7 +374,7 @@ const TableLoader = ({ rows }) => (
         </td>
       </tr>
     ))}
-  </tbody>
+  </>
 );
 
 export default AdminExpenses;
