@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, getMe, verifyEmail } from '../controllers/auth.controller.js';
+import { register, login, getMe, verifyEmail, logout } from '../controllers/auth.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -22,5 +22,10 @@ router.get('/me', protect, getMe);
 // @route POST /api/auth/verify-email
 // @access Public
 router.post('/verify-email', verifyEmail);
+
+// @desc logout user
+// @route GET /api/auth/logout
+// @access Private
+router.get('/logout', logout);
 
 export default router;

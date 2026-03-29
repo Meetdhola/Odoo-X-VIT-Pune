@@ -5,8 +5,15 @@ import crypto from 'crypto';
 import sendEmail from '../utils/sendEmail.js';
 
 // Generate JWT Helper
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'secret123', {
+const generateToken = (user) => {
+  const payload = {
+    id: user._id,
+    role: user.role,
+    company: user.companyId,
+    name: user.name,
+    email: user.email
+  };
+  return jwt.sign(payload, process.env.JWT_SECRET || 'secret123', {
     expiresIn: process.env.JWT_EXPIRE || '30d',
   });
 };
@@ -28,7 +35,7 @@ const handleErrorResponse = (res, error) => {
 // @access  Public
 export const register = async (req, res) => {
   try {
-    const { name, email, password, companyName, country } = req.body;
+    const { name, email, password, companyName, country, currency } = req.body;
 
     if (!companyName) {
       return res.status(400).json({ success: false, message: 'Please provide a company name' });
@@ -42,7 +49,8 @@ export const register = async (req, res) => {
       // First user of a new company becomes Admin
       company = await Company.create({ 
         name: companyName,
-        country: country || 'Not Specified'
+        country: country || 'Not Specified',
+        currency: currency || 'USD'
       });
       role = 'Admin';
     }
@@ -132,22 +140,50 @@ export const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Please verify your email to login' });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
-    res.status(200).json({
-      success: true,
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        companyId: user.companyId
-      }
-    });
+    // Set cookie
+    const cookieOptions = {
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      httpOnly: true,
+      secure: false, // Set to false for local development on HTTP
+      sameSite: 'lax',
+      path: '/'
+    };
+
+    res.status(200)
+      .cookie('token', token, cookieOptions)
+      .json({
+        success: true,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          companyId: user.companyId
+        }
+      });
   } catch (error) {
     handleErrorResponse(res, error);
   }
+};
+
+// @desc    Logout user
+// @route   GET /api/auth/logout
+// @access  Public
+export const logout = async (req, res) => {
+  res.cookie('token', 'none', {
+    expires: new Date(0), // Immediate expiration
+    httpOnly: true,
+    secure: false, // Match login settings
+    sameSite: 'lax',
+    path: '/'
+  });
+
+  res.status(200).json({
+    success: true,
+    message: 'Logged out successfully'
+  });
 };
 
 // @desc    Get current logged in user

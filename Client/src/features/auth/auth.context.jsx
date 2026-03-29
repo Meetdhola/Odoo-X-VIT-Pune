@@ -10,17 +10,15 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const data = await authService.getMe();
-          setUser(data.user);
-        } catch (error) {
-          console.error("Token expired or invalid", error);
-          authService.logout();
-        }
+      try {
+        const data = await authService.getMe();
+        setUser(data.user);
+      } catch (error) {
+        console.error("No active session");
+        // No need to call logout here as it would try to clear already invalid/missing cookie
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initAuth();
@@ -55,10 +53,15 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-    toast.success('Logged out successfully');
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error("Error during logout", error);
+      toast.error('Logout failed');
+    }
   };
 
   return (

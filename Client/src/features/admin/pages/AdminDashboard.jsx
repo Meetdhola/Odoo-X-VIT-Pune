@@ -1,193 +1,122 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { UserPlus, Search, RefreshCw, Mail, Shield, UserCheck, Key, Loader2, LogOut } from 'lucide-react';
-import { useAdmin } from '../hooks/useAdmin.js';
-import { useAuth } from '../../auth/hooks/useAuth.js';
-import CreateUserModal from '../components/CreateUserModal.jsx';
+import React, { useState, useEffect } from 'react';
+import api from '../../../lib/axios.js';
+import StatCard from '../components/StatCard.jsx';
+import { Users, CreditCard, CheckCircle, XCircle, TrendingUp, AlertCircle, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
-  const { users, managers, loading, fetchUsers, fetchManagers, createUser, updateUser, resetPassword } = useAdmin();
-  const { logout, user: currentUser } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [resettingId, setResettingId] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchUsers();
-    fetchManagers();
-  }, [fetchUsers, fetchManagers]);
+    const fetchStats = async () => {
+      try {
+        const { data } = await api.get('/admin/stats');
+        setStats(data.stats);
+      } catch (err) {
+        toast.error('Failed to load dashboard statistics');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
 
-  const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    u.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-pulse">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-32 bg-white rounded-[10px] border border-[#E2E8F0]"></div>
+        ))}
+      </div>
+    );
+  }
 
-  const handleResetPassword = async (userId) => {
-    setResettingId(userId);
-    await resetPassword(userId);
-    setResettingId(null);
-  };
+  const { totalUsers, expenses, approvalBottlenecks, expensesByCategory } = stats || {};
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8">
-      {/* Header */}
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
-        <div>
-          <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-4xl font-bold bg-gradient-to-r from-white via-slate-300 to-slate-500 bg-clip-text text-transparent"
-          >
-            User Management
-          </motion.h1>
-          <p className="text-slate-400 mt-2">Control panel for {currentUser?.name}'s organization</p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setIsModalOpen(true)}
-            className="px-6 py-3 bg-neonPurple rounded-2xl font-bold flex items-center gap-2 hover:shadow-[0_0_20px_rgba(157,78,221,0.4)] transition-all hover:scale-[1.02] active:scale-95"
-          >
-            <UserPlus size={20} />
-            Add New User
-          </button>
-          <button 
-            onClick={logout}
-            className="p-3 bg-slate-900/50 border border-white/5 rounded-2xl hover:bg-red-500/10 hover:border-red-500/20 text-slate-400 hover:text-red-500 transition-all"
-            title="Logout"
-          >
-            <LogOut size={20} />
-          </button>
-        </div>
+    <div className="space-y-8">
+      {/* Upper Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          icon={Users} 
+          label="Total Employees" 
+          value={totalUsers?.employee || 0} 
+          color="blue"
+        />
+        <StatCard 
+          icon={CreditCard} 
+          label="Total Expenses" 
+          value={expenses?.total || 0} 
+          color="indigo"
+        />
+        <StatCard 
+          icon={TrendingUp} 
+          label="Total Spend (MTD)" 
+          value={`$${(expenses?.totalSpendThisMonth || 0).toLocaleString()}`} 
+          color="emerald"
+        />
+        <StatCard 
+          icon={AlertCircle} 
+          label="Pending Approvals" 
+          value={expenses?.pending || 0} 
+          color="amber"
+        />
       </div>
 
-      {/* Stats/Controls Barra */}
-      <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-neonPurple transition-colors" size={18} />
-          <input 
-            type="text"
-            placeholder="Search users by name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full glass-input pl-12"
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Category Breakdown */}
+        <div className="lg:col-span-2 bg-white border border-[#E2E8F0] rounded-[10px] p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-[16px] font-bold text-[#0F172A]">Spending by Category</h3>
+          </div>
+          <div className="space-y-4">
+            {expensesByCategory?.map((cat) => (
+              <div key={cat.category} className="group">
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="text-[13px] font-semibold text-[#64748B] group-hover:text-[#0F172A] transition-colors">{cat.category}</span>
+                  <span className="text-[13px] font-bold text-[#0F172A]">${cat.total.toLocaleString()}</span>
+                </div>
+                <div className="h-2 w-full bg-[#F1F5F9] rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#6366F1] rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min(100, (cat.total / (expenses?.totalSpendThisMonth || 1)) * 100)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <button 
-          onClick={fetchUsers}
-          className="px-6 py-3 bg-slate-900/50 border border-white/5 rounded-2xl flex items-center gap-2 hover:bg-slate-800 transition-colors"
-        >
-          <RefreshCw className={loading ? 'animate-spin' : ''} size={18} />
-          Refresh
-        </button>
-      </div>
 
-      {/* User Table */}
-      <div className="max-w-7xl mx-auto">
-        <div className="glass-card rounded-3xl overflow-hidden border-white/5">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-900/50 border-b border-white/5">
-                  <th className="px-6 py-5 text-slate-400 font-semibold text-sm uppercase tracking-wider">User Name</th>
-                  <th className="px-6 py-5 text-slate-400 font-semibold text-sm uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-5 text-slate-400 font-semibold text-sm uppercase tracking-wider">Manager</th>
-                  <th className="px-6 py-5 text-slate-400 font-semibold text-sm uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-5 text-slate-400 font-semibold text-sm uppercase tracking-wider text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {loading && users.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-20 text-center text-slate-500">
-                      <div className="flex flex-col items-center gap-4">
-                        <Loader2 className="animate-spin text-neonPurple" size={40} />
-                        <p>Loading users...</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-20 text-center text-slate-500">
-                      No users found.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((u) => (
-                    <motion.tr 
-                      layout
-                      key={u._id} 
-                      className="group hover:bg-white/[0.02] transition-colors"
-                    >
-                      <td className="px-6 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${u.role === 'Admin' ? 'bg-amber-500/20 text-amber-500' : u.role === 'Manager' ? 'bg-blue-500/20 text-blue-500' : 'bg-slate-500/20 text-slate-400'}`}>
-                            {u.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-white">{u.name}</div>
-                            {u._id === currentUser?.id && <span className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded ml-0">YOU</span>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        <div className="relative inline-block group/role">
-                          <select 
-                            value={u.role}
-                            onChange={(e) => updateUser(u._id, { role: e.target.value })}
-                            className="bg-transparent border-none text-slate-300 text-sm focus:ring-0 cursor-pointer hover:text-white"
-                            disabled={u._id === currentUser?.id}
-                          >
-                            <option value="Employee" className="bg-slate-900">Employee</option>
-                            <option value="Manager" className="bg-slate-900">Manager</option>
-                            <option value="Admin" className="bg-slate-900" disabled>Admin</option>
-                          </select>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5">
-                        {u.role === 'Manager' ? (
-                          <span className="text-xs text-slate-500 italic">Is a Manager</span>
-                        ) : u.role === 'Admin' ? (
-                          <span className="text-xs text-slate-500 italic">Organization Lead</span>
-                        ) : (
-                          <select 
-                            value={u.managerId?._id || ''}
-                            onChange={(e) => updateUser(u._id, { managerId: e.target.value })}
-                            className="bg-transparent border-none text-slate-300 text-sm focus:ring-0 cursor-pointer hover:text-white"
-                          >
-                            <option value="" className="bg-slate-900">Unassigned</option>
-                            {managers.map(m => (
-                              <option key={m._id} value={m._id} className="bg-slate-900">{m.name}</option>
-                            ))}
-                          </select>
-                        )}
-                      </td>
-                      <td className="px-6 py-5 text-slate-400 text-sm">{u.email}</td>
-                      <td className="px-6 py-5 text-right">
-                        <button 
-                          onClick={() => handleResetPassword(u._id)}
-                          disabled={resettingId === u._id}
-                          className="p-2.5 bg-slate-800/50 rounded-xl hover:bg-neonPurple/20 hover:text-neonPurple transition-all group/btn disabled:opacity-50"
-                          title="Generate New Password & Email User"
-                        >
-                          {resettingId === u._id ? <Loader2 className="animate-spin" size={18} /> : <Key size={18} className="transition-transform group-hover/btn:scale-110" />}
-                        </button>
-                      </td>
-                    </motion.tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+        {/* Bottlenecks / Approvers */}
+        <div className="bg-white border border-[#E2E8F0] rounded-[10px] p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-[16px] font-bold text-[#0F172A]">Top Approver Workload</h3>
+          </div>
+          <div className="space-y-5">
+            {approvalBottlenecks?.map((bot, idx) => (
+              <div key={idx} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-[#F8FAFC] rounded-full flex items-center justify-center text-[12px] font-bold text-[#64748B] border border-[#E2E8F0]">
+                    {idx + 1}
+                  </div>
+                  <span className="text-[14px] font-medium text-[#0F172A]">{bot.approver.name}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[#92400E] bg-[#FEF3C7] px-2.5 py-1 rounded-full text-[11px] font-bold">
+                  <Clock size={12} />
+                  {bot.pendingCount} Pending
+                </div>
+              </div>
+            ))}
+            {(!approvalBottlenecks || approvalBottlenecks.length === 0) && (
+              <div className="text-center py-10">
+                <p className="text-[#64748B] text-[13px]">No pending bottlenecks found.</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      <CreateUserModal 
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreate={createUser}
-        managers={managers}
-      />
     </div>
   );
 };
