@@ -8,8 +8,8 @@ const DashboardPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user?.role === 'Admin') {
-      navigate('/admin/dashboard', { replace: true });
+    if (user?.role?.toLowerCase() === 'admin') {
+      navigate('/admin', { replace: true });
     }
   }, [user, navigate]);
 

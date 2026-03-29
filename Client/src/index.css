@@ -1,41 +1,83 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap');
-
 @import "tailwindcss";
-@config "../tailwind.config.js";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-brand: #4F46E5;
+  --color-brand-hover: #4338CA;
+  --color-bg-page: #F4F5F7;
+  --color-sidebar: #0F172A;
+  --color-sidebar-active: #1E293B;
+  --color-border-base: #E2E8F0;
+  --color-text-main: #0F172A;
+  --color-text-muted: #64748B;
+  --color-neonPurple: #6366F1;
+}
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 min-h-screen m-0 font-sans selection:bg-neonPurple/30 selection:text-white;
+    @apply bg-[--color-bg-page] text-[--color-text-main] min-h-screen m-0 font-sans antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-[#4F46E5] text-white font-medium px-4 h-[38px] rounded-lg transition-colors hover:bg-[#4338CA] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2;
+  }
+  
+  .btn-secondary {
+    @apply bg-white border border-[#D1D5DB] text-[#374151] font-medium px-4 h-[38px] rounded-lg transition-colors hover:bg-gray-50 disabled:opacity-50 flex items-center justify-center gap-2;
+  }
+  
+  .btn-danger {
+    @apply bg-[#EF4444] text-white font-medium px-4 h-[38px] rounded-lg transition-colors hover:bg-[#DC2626] disabled:opacity-50 flex items-center justify-center gap-2;
+  }
+
+  .input-base {
+    @apply border border-[#D1D5DB] rounded-lg h-[38px] px-3 focus:ring-2 focus:ring-[#6366F1] focus:border-transparent outline-none transition-all w-full;
+  }
+
+  .card-base {
+    @apply bg-white border border-[#E2E8F0] rounded-[10px] p-6;
+  }
+
+  .table-header-cell {
+    @apply bg-[#F8FAFC] text-[11px] font-medium uppercase text-[#64748B] tracking-[0.05em] px-4 py-3 border-b-[1.5px] border-[#E2E8F0] text-left;
+  }
+
+  .table-row {
+    @apply h-[52px] border-b border-[#F1F5F9] hover:bg-[#F8FAFC] transition-colors;
+  }
+
+  /* Base Badge Styles */
+  .badge-pending, .badge-approved, .badge-rejected, 
+  .badge-admin, .badge-manager, .badge-employee {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-medium;
+  }
+
+  /* Color Schemes */
+  .badge-pending { @apply bg-[#FEF3C7] text-[#92400E]; }
+  .badge-approved { @apply bg-[#D1FAE5] text-[#065F46]; }
+  .badge-rejected { @apply bg-[#FEE2E2] text-[#991B1B]; }
+
+  .badge-admin { @apply bg-[#EEF2FF] text-[#3730A3]; }
+  .badge-manager { @apply bg-[#EFF6FF] text-[#1E40AF]; }
+  .badge-employee { @apply bg-[#F3F4F6] text-[#374151]; }
+
+  /* Glass Components for Auth Pages */
+  .glass-card {
+    @apply bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-2xl;
+  }
+
+  .glass-input {
+    @apply w-full bg-white/5 border border-white/10 rounded-xl h-[48px] px-4 text-white outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1] transition-all;
+  }
+
+  .btn-neon {
+    @apply bg-[#6366F1] hover:bg-[#4F46E5] text-white font-bold rounded-xl transition-all shadow-lg shadow-[#6366F1]/25 hover:shadow-[#6366F1]/40;
   }
 }
 
 @layer utilities {
-  .glass-card {
-    @apply bg-slate-900/40 backdrop-blur-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden;
-  }
-  
-  .glass-card::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none;
-  }
-
-  .glass-input {
-    @apply w-full px-4 py-4 bg-slate-950/40 border border-white/5 rounded-2xl text-white outline-none transition-all duration-300 focus:border-neonPurple/50 focus:bg-slate-900/60 focus:shadow-[0_0_20px_rgba(157,78,221,0.15)] placeholder:text-transparent;
-  }
-
-  .btn-neon {
-    @apply relative overflow-hidden bg-gradient-to-r from-neonPurple to-indigo-600 font-bold rounded-2xl transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(157,78,221,0.4)] active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none;
-  }
-  
-  .btn-neon::after {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full transition-transform duration-1000 ease-in-out;
-  }
-  
-  .btn-neon:hover::after {
-    @apply translate-x-full;
-  }
-
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
@@ -43,37 +85,26 @@
     @apply bg-transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+    @apply bg-gray-300 rounded-full hover:bg-gray-400;
   }
-}
 
-/* Animations */
-.animate-blob {
-  animation: blob 7s infinite;
-}
+  /* Animations for Auth Pages */
+  @keyframes blob {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+    100% { transform: translate(0px, 0px) scale(1); }
+  }
 
-@keyframes blob {
-  0% { transform: translate(0px, 0px) scale(1); }
-  33% { transform: translate(30px, -50px) scale(1.1); }
-  66% { transform: translate(-20px, 20px) scale(0.9); }
-  100% { transform: translate(0px, 0px) scale(1); }
-}
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
 
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
 
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
-
-/* Page Transitions */
-.page-exit {
-  opacity: 1;
-  transform: translateY(0);
-}
-.page-exit-active {
-  opacity: 0;
-  transform: translateY(-20px);
-  transition: opacity 300ms, transform 300ms;
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
 }

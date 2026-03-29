@@ -8,6 +8,10 @@ const companySchema = new mongoose.Schema({
     trim: true
   },
   country: String,
+  currency: {
+    type: String,
+    default: 'USD'
+  },
   industry: String,
   admin: {
     type: mongoose.Schema.Types.ObjectId,

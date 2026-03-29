@@ -4,7 +4,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff, User, Mail, Lock, Globe, Search, ChevronDown, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { COUNTRIES } from '../../shared/utils/countries.js';
 
 const RegisterPage = () => {
   const { register } = useAuth();
@@ -21,17 +20,54 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  // Country Dropdown State
   const [isCountryOpen, setIsCountryOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [countries, setCountries] = useState([]); // Dynamic list
   const [selectedCountry, setSelectedCountry] = useState(null);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(true);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch('https://restcountries.com/v3.1/all?fields=name,currencies,flag,cca3');
+        const data = await response.json();
+        
+        const mapped = data.map(c => {
+          // Robustly extract currency code and info
+          const currencyKeys = c.currencies ? Object.keys(c.currencies) : [];
+          const currencyCode = currencyKeys.length > 0 ? currencyKeys[0] : 'USD';
+          const currencyInfo = (c.currencies && currencyCode) ? c.currencies[currencyCode] : null;
+          
+          return {
+            id: c.cca3, // Unique 3-letter country code
+            name: c.name?.common || 'Unknown',
+            code: currencyCode,
+            flag: c.flag || '🏳️',
+            currency: currencyCode,
+            symbol: currencyInfo?.symbol || '$'
+          };
+        }).sort((a,b) => a.name.localeCompare(b.name));
+
+        setCountries(mapped);
+      } catch (err) {
+        console.error("Failed to fetch countries", err);
+        toast.error("Using fallback country list");
+        // Minor fallback if API fails
+        setCountries([{ name: 'India', code: 'INR', flag: '🇮🇳', currency: 'INR', symbol: '₹' }, { name: 'United States', code: 'USD', flag: '🇺🇸', currency: 'USD', symbol: '$' }]);
+      } finally {
+        setIsLoadingCountries(false);
+      }
+    };
+
+    fetchCountries();
+  }, []);
 
   const filteredCountries = useMemo(() => {
-    return COUNTRIES.filter(c => 
+    return countries.filter(c => 
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       c.code.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [countries, searchTerm]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -82,7 +118,8 @@ const RegisterPage = () => {
       email: formData.email,
       password: formData.password,
       country: formData.country,
-      companyName: formData.companyName // Passing company name
+      currency: selectedCountry.code, // Pass exact currency from API
+      companyName: formData.companyName
     });
     setIsSubmitting(false);
     
@@ -236,11 +273,14 @@ const RegisterPage = () => {
               <div className="relative col-span-1 md:col-span-2">
                 <button
                   type="button"
+                  disabled={isLoadingCountries}
                   onClick={() => setIsCountryOpen(!isCountryOpen)}
-                  className={`w-full flex items-center justify-between glass-input pl-11 pr-4 text-left ${selectedCountry ? 'text-white' : 'text-slate-400'}`}
+                  className={`w-full flex items-center justify-between glass-input pl-11 pr-4 text-left ${selectedCountry ? 'text-white' : 'text-slate-400'} ${isLoadingCountries ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <Globe className={`absolute left-4 top-1/2 -translate-y-1/2 ${isCountryOpen ? 'text-neonPurple' : 'text-slate-500'}`} size={20} />
-                  <span>{selectedCountry ? `${selectedCountry.flag} ${selectedCountry.name}` : 'Select Country'}</span>
+                  <span>
+                    {isLoadingCountries ? 'Loading countries...' : (selectedCountry ? `${selectedCountry.flag} ${selectedCountry.name}` : 'Select Country')}
+                  </span>
                   <ChevronDown className={`transition-transform duration-300 ${isCountryOpen ? 'rotate-180 text-neonPurple' : 'text-slate-500'}`} size={18} />
                 </button>
                 
@@ -267,7 +307,7 @@ const RegisterPage = () => {
                       <div className="overflow-y-auto custom-scrollbar flex-1">
                         {filteredCountries.map((country) => (
                           <button
-                            key={country.code}
+                            key={country.id}
                             type="button"
                             onClick={() => handleCountrySelect(country)}
                             className="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-white/10 hover:text-white transition-colors border-b border-white/5 last:border-none"
