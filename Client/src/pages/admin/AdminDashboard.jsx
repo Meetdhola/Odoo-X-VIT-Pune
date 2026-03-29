@@ -114,7 +114,7 @@ const AdminDashboard = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-[13px] font-black text-white uppercase tracking-tight mb-0.5">{exp.currency} {exp.amount.toFixed(2)}</div>
-                        <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">~ ${exp.convertedAmount.toFixed(2)} USD</div>
+                        <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest">~ {stats?.currency || '$'} {exp.convertedAmount.toFixed(2)}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className={`inline-flex px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${exp.status === 'approved' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
@@ -182,7 +182,7 @@ const AdminDashboard = () => {
                     <div key={idx} className="space-y-2">
                       <div className="flex justify-between text-[11px] font-black uppercase tracking-widest">
                         <span className="text-slate-400 italic">{cat.category}</span>
-                        <span className="text-white">${cat.total.toLocaleString()}</span>
+                        <span className="text-white">{stats?.currency || '$'}{cat.total.toLocaleString()}</span>
                       </div>
                       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
                         <div className="h-full bg-indigo-500 rounded-full shadow-[0_0_8px_rgba(99,102,241,0.4)]" style={{ width: `${width}%` }} />

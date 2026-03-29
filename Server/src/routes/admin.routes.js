@@ -214,6 +214,7 @@ router.get('/expenses', async (req, res) => {
       .lean();
 
     const total = await Expense.countDocuments(query);
+    const company = await Company.findById(req.user.companyId || req.user.company);
 
     const enhancedExpenses = await Promise.all(expenses.map(async (exp) => {
       let currentApprover = null;
@@ -227,7 +228,7 @@ router.get('/expenses', async (req, res) => {
       return { ...exp, currentApprover };
     }));
 
-    res.json({ expenses: enhancedExpenses, total, page: Number(page) });
+    res.json({ expenses: enhancedExpenses, total, page: Number(page), currency: company?.currency || 'USD' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -21,6 +21,7 @@ const StatusPill = ({ label, count, active, onClick, colorClass }) => (
 const AdminExpenses = () => {
   const [expenses, setExpenses] = useState([]);
   const [total, setTotal] = useState(0);
+  const [currency, setCurrency] = useState('USD');
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({ status: '', category: '', from: '', to: '' });
@@ -35,6 +36,7 @@ const AdminExpenses = () => {
       const { data } = await api.get('/admin/expenses', { params: { ...filters, page, limit: 10 } });
       setExpenses(data.expenses);
       setTotal(data.total);
+      setCurrency(data.currency);
     } catch {
       toast.error('Failed to load expense list');
     } finally {
@@ -155,8 +157,8 @@ const AdminExpenses = () => {
                     <span className="text-[13px] font-black text-slate-400 uppercase tracking-tight">{exp.currency} {exp.amount.toLocaleString()}</span>
                   </td>
                   <td className="px-6 py-6 text-right">
-                    <div className="text-[14px] font-black text-white uppercase tracking-tight">${(exp.convertedAmount || exp.amount).toLocaleString()}</div>
-                    <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-0.5">USD SYNC</div>
+                    <div className="text-[14px] font-black text-white uppercase tracking-tight">{currency} {(exp.convertedAmount || exp.amount).toLocaleString()}</div>
+                    <div className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-0.5">COMPANY BASE</div>
                   </td>
                   <td className="px-6 py-6">
                     <div className="flex items-center gap-2">
