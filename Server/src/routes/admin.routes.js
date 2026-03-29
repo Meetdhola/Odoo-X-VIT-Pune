@@ -4,6 +4,7 @@ import { verifyJWT, requireRole } from '../middlewares/auth.middleware.js';
 import User from '../models/user.model.js';
 import Company from '../models/company.model.js';
 import ApprovalRule from '../models/approvalRule.model.js';
+import sendEmail from '../utils/sendEmail.js';
 import Expense from '../models/expense.model.js';
 import ApprovalRequest from '../models/approvalRequest.model.js';
 
@@ -35,20 +36,46 @@ router.post('/users', async (req, res) => {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Model handles hashing in pre-save hook
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password, // Send plain password, model will hash it
       role: role || 'Employee',
       companyId: req.user.company,
       managerId: managerId === '' ? null : managerId,
-      isManagerApprover: isManagerApprover || false
+      isManagerApprover: isManagerApprover || false,
+      otp,
+      otpExpires: Date.now() + 24 * 60 * 60 * 1000 // 24 hours for invitation
     });
 
-    res.status(201).json({ user });
+    // Send invitation email
+    const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?email=${email}&otp=${otp}`;
+    
+    await sendEmail({
+      email,
+      subject: 'You have been invited to ReimburseIQ',
+      message: `Hello ${name},\n\nYou have been invited by your administrator to join ReimburseIQ. Your temporary password is: ${password}\n\nPlease verify your account by clicking the link below:\n\n${verifyUrl}`,
+      html: `<div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+               <h2 style="color: #4F46E5;">Welcome to ReimburseIQ!</h2>
+               <p>Hello <strong>${name}</strong>,</p>
+               <p>Your administrator has created an account for you. Here are your login credentials:</p>
+               <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                 <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+                 <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${password}</p>
+               </div>
+               <p>Please click the button below to verify your account and join your team:</p>
+               <div style="text-align: center; margin: 30px 0;">
+                 <a href="${verifyUrl}" style="background: #4F46E5; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Accept Invitation</a>
+               </div>
+               <p style="font-size: 12px; color: #64748b;">If the button doesn't work, copy and paste this link into your browser:<br>${verifyUrl}</p>
+             </div>`
+    });
+
+    res.status(201).json({ user, message: 'Invitation email sent successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
