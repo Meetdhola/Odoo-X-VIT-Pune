@@ -360,9 +360,15 @@ const FormInput = ({ label, icon, value, onChange, type = "text", placeholder, r
 );
 
 const TableLoader = ({ rows }) => (
-  <div className="space-y-6">
-    {[...Array(rows)].map(i => <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />)}
-  </div>
+  <>
+    {[...Array(rows)].map((_, i) => (
+      <tr key={i} className="animate-pulse border-b border-white/5 last:border-0">
+        <td colSpan="6" className="px-8 py-6">
+          <div className="h-12 bg-white/5 rounded-2xl w-full" />
+        </td>
+      </tr>
+    ))}
+  </>
 );
 
 export default AdminUsers;

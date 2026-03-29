@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, useSearchParams } from 'react-router-dom';
 import { authService } from '../services/auth.service.js';
 import { Mail, CheckCircle2, ShieldCheck, ArrowRight, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -7,20 +7,44 @@ import { motion } from 'framer-motion';
 const VerifyEmailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [status, setStatus] = useState('idle'); // 'idle', 'loading', 'success', 'error'
   const [message, setMessage] = useState('');
+  const [isAutoVerifying, setIsAutoVerifying] = useState(false);
 
-  // Auto-fill email if passed from Registration page
+  // Auto-fill and auto-verify from search params (Magic Link)
   useEffect(() => {
-    if (location.state?.email) {
+    const urlEmail = searchParams.get('email');
+    const urlOtp = searchParams.get('otp');
+
+    if (urlEmail && urlOtp) {
+      setEmail(urlEmail);
+      setOtp(urlOtp);
+      setIsAutoVerifying(true);
+      autoVerify(urlEmail, urlOtp);
+    } else if (location.state?.email) {
       setEmail(location.state.email);
     }
-  }, [location]);
+  }, [location, searchParams]);
+
+  const autoVerify = async (e, o) => {
+    setStatus('loading');
+    try {
+      const data = await authService.verifyEmail({ email: e, otp: o });
+      setStatus('success');
+      setMessage(data.message);
+    } catch (error) {
+      setStatus('error');
+      setMessage(error.response?.data?.message || 'Verification failed. Invalid or expired OTP.');
+    } finally {
+      setIsAutoVerifying(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setStatus('loading');
     try {
       const data = await authService.verifyEmail({ email, otp });

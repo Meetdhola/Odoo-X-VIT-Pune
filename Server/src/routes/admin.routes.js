@@ -4,6 +4,7 @@ import { verifyJWT, requireRole } from '../middlewares/auth.middleware.js';
 import User from '../models/user.model.js';
 import Company from '../models/company.model.js';
 import ApprovalRule from '../models/approvalRule.model.js';
+import sendEmail from '../utils/sendEmail.js';
 import Expense from '../models/expense.model.js';
 import ApprovalRequest from '../models/approvalRequest.model.js';
 
@@ -12,11 +13,14 @@ const router = express.Router();
 router.use(verifyJWT);
 router.use(requireRole('admin'));
 
+// Helper to handle both company and companyId from token
+const getCompId = (req) => req.user.companyId || req.user.company;
+
 // --- USER MANAGEMENT ---
 
 router.get('/users', async (req, res) => {
   try {
-    const users = await User.find({ companyId: req.user.companyId })
+    const users = await User.find({ companyId: req.user.companyId || req.user.company })
       .populate('managerId', 'name email')
       .populate('companyId', 'name');
     res.json({ users });
@@ -35,20 +39,46 @@ router.post('/users', async (req, res) => {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+    // Model handles hashing in pre-save hook
     const user = await User.create({
       name,
       email,
-      password: hashedPassword,
+      password, // Send plain password, model will hash it
       role: role || 'Employee',
-      companyId: req.user.company,
+      companyId: req.user.companyId || req.user.company,
       managerId: managerId === '' ? null : managerId,
-      isManagerApprover: isManagerApprover || false
+      isManagerApprover: isManagerApprover || false,
+      otp,
+      otpExpires: Date.now() + 24 * 60 * 60 * 1000 // 24 hours for invitation
     });
 
-    res.status(201).json({ user });
+    // Send invitation email
+    const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?email=${email}&otp=${otp}`;
+    
+    await sendEmail({
+      email,
+      subject: 'You have been invited to ReimburseIQ',
+      message: `Hello ${name},\n\nYou have been invited by your administrator to join ReimburseIQ. Your temporary password is: ${password}\n\nPlease verify your account by clicking the link below:\n\n${verifyUrl}`,
+      html: `<div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+               <h2 style="color: #4F46E5;">Welcome to ReimburseIQ!</h2>
+               <p>Hello <strong>${name}</strong>,</p>
+               <p>Your administrator has created an account for you. Here are your login credentials:</p>
+               <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                 <p style="margin: 5px 0;"><strong>Email:</strong> ${email}</p>
+                 <p style="margin: 5px 0;"><strong>Temporary Password:</strong> ${password}</p>
+               </div>
+               <p>Please click the button below to verify your account and join your team:</p>
+               <div style="text-align: center; margin: 30px 0;">
+                 <a href="${verifyUrl}" style="background: #4F46E5; color: white; padding: 14px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Accept Invitation</a>
+               </div>
+               <p style="font-size: 12px; color: #64748b;">If the button doesn't work, copy and paste this link into your browser:<br>${verifyUrl}</p>
+             </div>`
+    });
+
+    res.status(201).json({ user, message: 'Invitation email sent successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -58,7 +88,7 @@ router.patch('/users/:id', async (req, res) => {
   try {
     const { name, role, managerId, isManagerApprover } = req.body;
 
-    const user = await User.findOne({ _id: req.params.id, companyId: req.user.companyId });
+    const user = await User.findOne({ _id: req.params.id, companyId: req.user.companyId || req.user.company });
     if (!user) return res.status(404).json({ error: 'User not found in your company' });
 
     if (name) user.name = name;
@@ -79,7 +109,7 @@ router.delete('/users/:id', async (req, res) => {
     if (req.params.id === req.user.id.toString()) {
       return res.status(400).json({ error: 'Cannot delete yourself' });
     }
-    const user = await User.findOneAndDelete({ _id: req.params.id, companyId: req.user.companyId });
+    const user = await User.findOneAndDelete({ _id: req.params.id, companyId: req.user.companyId || req.user.company });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     res.json({ message: 'User deleted successfully' });
@@ -92,7 +122,7 @@ router.delete('/users/:id', async (req, res) => {
 
 router.get('/rules', async (req, res) => {
   try {
-    const rules = await ApprovalRule.find({ company: req.user.companyId })
+    const rules = await ApprovalRule.find({ company: req.user.companyId || req.user.company })
       .populate('steps.approver', 'name email role');
     res.json({ rules });
   } catch (error) {
@@ -124,7 +154,7 @@ router.post('/rules', async (req, res) => {
   try {
     const cleanData = sanitizeRuleData(req.body);
     const rule = await ApprovalRule.create({
-      company: req.user.company,
+      company: req.user.companyId || req.user.company,
       ...cleanData
     });
 
@@ -136,7 +166,7 @@ router.post('/rules', async (req, res) => {
 
 router.patch('/rules/:id', async (req, res) => {
   try {
-    const rule = await ApprovalRule.findOne({ _id: req.params.id, company: req.user.companyId });
+    const rule = await ApprovalRule.findOne({ _id: req.params.id, company: req.user.companyId || req.user.company });
     if (!rule) return res.status(404).json({ error: 'Approval rule not found' });
 
     const cleanData = sanitizeRuleData(req.body);
@@ -156,7 +186,7 @@ router.patch('/rules/:id', async (req, res) => {
 
 router.delete('/rules/:id', async (req, res) => {
   try {
-    const rule = await ApprovalRule.findOneAndDelete({ _id: req.params.id, company: req.user.companyId });
+    const rule = await ApprovalRule.findOneAndDelete({ _id: req.params.id, company: req.user.companyId || req.user.company });
     if (!rule) return res.status(404).json({ error: 'Rule not found' });
     res.json({ message: 'Rule deleted successfully' });
   } catch (error) {
@@ -169,7 +199,7 @@ router.delete('/rules/:id', async (req, res) => {
 router.get('/expenses', async (req, res) => {
   try {
     const { status, category, page = 1, limit = 20 } = req.query;
-    const query = { company: req.user.companyId };
+    const query = { company: req.user.companyId || req.user.company };
 
     if (status) query.status = status;
     if (category) query.category = category;
@@ -205,7 +235,7 @@ router.get('/expenses', async (req, res) => {
 
 router.get('/expenses/:id', async (req, res) => {
   try {
-    const expense = await Expense.findOne({ _id: req.params.id, company: req.user.companyId })
+    const expense = await Expense.findOne({ _id: req.params.id, company: req.user.companyId || req.user.company })
       .populate('employee', 'name email')
       .populate('approvalRule', 'name');
 
@@ -227,7 +257,7 @@ router.post('/expenses/:id/override', async (req, res) => {
       return res.status(400).json({ error: 'Invalid action. Use approve or reject.' });
     }
 
-    const expense = await Expense.findOne({ _id: req.params.id, company: req.user.companyId });
+    const expense = await Expense.findOne({ _id: req.params.id, company: req.user.companyId || req.user.company });
     if (!expense) return res.status(404).json({ error: 'Expense not found' });
 
     const newStatus = action === 'approve' ? 'approved' : 'rejected';
@@ -249,7 +279,7 @@ router.post('/expenses/:id/override', async (req, res) => {
 
 router.get('/stats', async (req, res) => {
   try {
-    const companyId = req.user.company;
+    const companyId = req.user.companyId || req.user.company;
     const company = await Company.findById(companyId);
     if (!company) return res.status(404).json({ error: 'Company not found' });
 
@@ -348,7 +378,7 @@ router.get('/stats', async (req, res) => {
 
 router.get('/company', async (req, res) => {
   try {
-    const company = await Company.findById(req.user.company);
+    const company = await Company.findById(req.user.companyId || req.user.company);
     if (!company) return res.status(404).json({ error: 'Company not found' });
     res.json({ company });
   } catch (error) {
@@ -361,7 +391,7 @@ router.patch('/company', async (req, res) => {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'Company name is required' });
 
-    const company = await Company.findById(req.user.company);
+    const company = await Company.findById(req.user.companyId || req.user.company);
     if (!company) return res.status(404).json({ error: 'Company not found' });
 
     company.name = name;

@@ -9,7 +9,7 @@ const generateToken = (user) => {
   const payload = {
     id: user._id,
     role: user.role,
-    company: user.companyId,
+    companyId: user.companyId,
     name: user.name,
     email: user.email
   };
