@@ -112,18 +112,18 @@ const AdminUsers = () => {
   });
 
   return (
-    <AdminLayout title="Identity Directory" subtitle="Employee & Manager Access Control">
+    <AdminLayout title="User Directory" subtitle="Manage your team members and their access levels">
       <div className="space-y-8 animate-in fade-in duration-500">
         
         {/* Advanced Filter Bar */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
           <div className="flex flex-col gap-3">
-             <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1 italic">Scan Registry</label>
+             <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1 italic">Search Team</label>
              <div className="relative group w-full md:w-96">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
                 <input 
                   type="text" 
-                  placeholder="NAME OR EMAIL ID..." 
+                  placeholder="NAME OR EMAIL..." 
                   className="w-full h-14 pl-12 pr-4 bg-white/[0.02] border border-white/5 rounded-2xl text-[12px] font-black uppercase text-white placeholder:text-slate-700 focus:border-indigo-500/50 focus:bg-white/[0.04] outline-none transition-all shadow-inner"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -139,7 +139,7 @@ const AdminUsers = () => {
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
                 >
-                  <option value="all">ALL ENTITIES</option>
+                  <option value="all">ALL ROLES</option>
                   <option value="admin">ADMINS ONLY</option>
                   <option value="manager">MANAGERS ONLY</option>
                   <option value="employee">EMPLOYEES ONLY</option>
@@ -149,7 +149,7 @@ const AdminUsers = () => {
              <div className="flex flex-col gap-3">
                 <div className="h-10 invisible" /> {/* Spacer */}
                 <button onClick={() => handleOpenDrawer()} className="bg-indigo-600 text-white h-14 px-8 rounded-2xl flex items-center gap-3 font-black uppercase text-[11px] tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all">
-                  <UserPlus size={18} /> Create Identity
+                  <UserPlus size={18} /> Add User
                 </button>
              </div>
           </div>
@@ -172,7 +172,7 @@ const AdminUsers = () => {
               {loading ? (
                 <TableLoader rows={5} />
               ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan="6" className="px-8 py-24 text-center text-slate-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No Identities Detected In Local Buffer</td></tr>
+                <tr><td colSpan="6" className="px-8 py-24 text-center text-slate-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No users found</td></tr>
               ) : filteredUsers.map((user) => (
                 <tr key={user._id} className="hover:bg-indigo-500/[0.02] transition-colors border-b border-white/5 last:border-0 group">
                   <td className="px-8 py-6">
@@ -228,8 +228,8 @@ const AdminUsers = () => {
               <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative h-full w-full max-w-md bg-slate-900 border-l border-white/10 shadow-3xl flex flex-col">
                  <div className="h-24 px-10 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.01]">
                     <div>
-                       <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">{editingUser ? 'Update Insight' : 'New Identity'}</h3>
-                       <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Modify access permissions</p>
+                       <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">{editingUser ? 'Update User' : 'New User'}</h3>
+                       <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Modify access and role</p>
                     </div>
                     <button onClick={() => setShowDrawer(false)} className="p-3 -mr-2 text-slate-600 hover:bg-white/5 rounded-2xl transition-all">
                       <X size={24} />
@@ -238,7 +238,7 @@ const AdminUsers = () => {
                  
                  <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-8 scrollbar-hide bg-gradient-to-b from-slate-900 to-slate-950">
                     <FormInput 
-                       label="Legal Name" 
+                       label="Full Name" 
                        icon={<Shield size={16} />}
                        value={formData.name}
                        onChange={(v) => setFormData({...formData, name: v})}
@@ -246,7 +246,7 @@ const AdminUsers = () => {
                     />
                     
                     <FormInput 
-                       label="Email Vector" 
+                       label="Email Address" 
                        icon={<Mail size={16} />}
                        value={formData.email}
                        onChange={(v) => setFormData({...formData, email: v})}
@@ -256,7 +256,7 @@ const AdminUsers = () => {
 
                     {!editingUser && (
                        <FormInput 
-                          label="Initial Key" 
+                          label="Security Password" 
                           icon={<Calendar size={16} />}
                           type="password"
                           value={formData.password}
@@ -266,27 +266,27 @@ const AdminUsers = () => {
                     )}
 
                     <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 italic">Structural Role</label>
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 italic">Role</label>
                       <select 
                         className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm text-white font-black uppercase outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
                         value={formData.role}
                         onChange={(e) => setFormData({...formData, role: e.target.value})}
                       >
-                        <option value="Employee">Employee (Normal)</option>
-                        <option value="Manager">Manager (Approver)</option>
-                        <option value="Admin">Administrator (Super)</option>
+                        <option value="Employee">Employee</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Admin">Administrator</option>
                       </select>
                     </div>
 
                     {formData.role === 'Employee' && (
                       <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 italic">Hierarchy Anchor</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-1 italic">Direct Manager</label>
                         <select 
                           className="w-full h-14 bg-white/5 border border-white/10 rounded-2xl px-6 text-sm text-white font-black uppercase outline-none"
                           value={formData.managerId}
                           onChange={(e) => setFormData({...formData, managerId: e.target.value})}
                         >
-                          <option value="">No Active Manager</option>
+                          <option value="">No Direct Manager</option>
                           {users.filter(u => u.role === 'Manager' && u._id !== editingUser?._id).map(u => (
                             <option key={u._id} value={u._id}>{u.name}</option>
                           ))}
@@ -312,7 +312,7 @@ const AdminUsers = () => {
 
                     <div className="pt-10 flex flex-col gap-4">
                        <button type="submit" disabled={submitting} className="h-14 bg-indigo-600 shadow-xl shadow-indigo-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-indigo-500 transition-all disabled:opacity-50">
-                         {submitting ? 'EXECUTING DATA SYNC...' : editingUser ? 'UPDATE IDENTITY' : 'COMMIT INDENTITY'}
+                         {submitting ? 'UPDATING...' : editingUser ? 'UPDATE USER' : 'ADD USER'}
                        </button>
                        <button type="button" onClick={() => setShowDrawer(false)} className="h-14 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-white/10 transition-all">
                           Void Action

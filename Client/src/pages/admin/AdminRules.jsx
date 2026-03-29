@@ -74,12 +74,22 @@ const AdminRules = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    
+    // Pre-flight sanitization
+    const cleanData = { ...formData };
+    if (cleanData.specificApprover === '') delete cleanData.specificApprover;
+    cleanData.steps = cleanData.steps.map(s => {
+      const step = { ...s };
+      if (step.approverRole) step.approver = ''; // Sync frontend state
+      return step;
+    });
+
     try {
       if (editingRule) {
-        await api.patch(`/admin/rules/${editingRule._id}`, formData);
+        await api.patch(`/admin/rules/${editingRule._id}`, cleanData);
         toast.success('Core logic updated');
       } else {
-        await api.post('/admin/rules', formData);
+        await api.post('/admin/rules', cleanData);
         toast.success('New policy instantiated');
       }
       setShowDrawer(false);
@@ -95,7 +105,7 @@ const AdminRules = () => {
      if (!window.confirm('IRREVERSIBLE: Purge this policy from kernel?')) return;
      try {
        await api.delete(`/admin/rules/${id}`);
-       toast.success('Strategy removed from registry');
+       toast.success('Rule removed from system');
        fetchData();
      } catch {
         toast.error('Action failed');
@@ -115,13 +125,13 @@ const AdminRules = () => {
     <AdminLayout title="Policy Matrix" subtitle="Multi-Level Approval Strategies">
       <div className="space-y-10 animate-in fade-in duration-500">
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-           <div>
-              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Active Protocols</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2 italic">* {rules.length} strategies currently guarding outflows</p>
-           </div>
-           <button onClick={() => handleOpenDrawer()} className="bg-indigo-600 text-white h-14 px-8 rounded-2xl flex items-center gap-3 font-black uppercase text-[11px] tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all">
-             <Plus size={18} /> New Architecture
-           </button>
+            <div>
+              <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Approval Rules</h2>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-2 italic">* {rules.length} active rules guarding expenditures</p>
+            </div>
+            <button onClick={() => handleOpenDrawer()} className="bg-indigo-600 text-white h-14 px-8 rounded-2xl flex items-center gap-3 font-black uppercase text-[11px] tracking-widest shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all">
+              <Plus size={18} /> Add New Rule
+            </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-20">
@@ -198,8 +208,8 @@ const AdminRules = () => {
               <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 200 }} className="relative h-full w-full max-w-xl bg-slate-900 border-l border-white/10 shadow-3xl flex flex-col">
                  <div className="h-24 px-10 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.01]">
                     <div>
-                       <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">{editingRule ? 'Modify Policy' : 'Build Architecture'}</h3>
-                       <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Define approval flow logic</p>
+                       <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">{editingRule ? 'Edit Approval Rule' : 'Create Approval Rule'}</h3>
+                       <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Define the workflow for expense claims</p>
                     </div>
                     <button onClick={() => setShowDrawer(false)} className="p-3 -mr-2 text-slate-600 hover:bg-white/5 rounded-2xl transition-all">
                       <X size={24} />
@@ -264,19 +274,38 @@ const AdminRules = () => {
                                  <div className="w-10 h-10 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl flex items-center justify-center text-[10px] font-black uppercase shadow-inner">
                                    {idx+1}
                                  </div>
-                                 <select 
-                                   className="flex-1 h-12 bg-transparent text-white font-black uppercase text-xs outline-none cursor-pointer"
-                                   value={step.approver}
-                                   onChange={(e) => {
-                                     const newSteps = [...formData.steps];
-                                     newSteps[idx].approver = e.target.value;
-                                     setFormData({...formData, steps: newSteps});
-                                   }}
-                                   required
-                                 >
-                                   <option value="" className="bg-slate-900">Select individual...</option>
-                                   {users.filter(u => u.role !== 'Employee').map(u => <option key={u._id} value={u._id} className="bg-slate-900">{u.name} ({u.role})</option>)}
-                                 </select>
+                                 <div className="flex-1 grid grid-cols-2 gap-3">
+                                   <select 
+                                     className="h-12 bg-transparent text-white font-black uppercase text-[10px] outline-none cursor-pointer border-b border-white/10"
+                                     value={step.approverRole || ''}
+                                     onChange={(e) => {
+                                       const newSteps = [...formData.steps];
+                                       newSteps[idx].approverRole = e.target.value;
+                                       if (e.target.value) newSteps[idx].approver = ''; // Clear specific if role set
+                                       setFormData({...formData, steps: newSteps});
+                                     }}
+                                   >
+                                     <option value="" className="bg-slate-900">Choose Role (Dynamic)</option>
+                                     <option value="Manager" className="bg-slate-900">Direct Manager</option>
+                                     <option value="Admin" className="bg-slate-900">System Administrator</option>
+                                   </select>
+
+                                   <select 
+                                     className="h-12 bg-transparent text-white font-black uppercase text-[10px] outline-none cursor-pointer border-b border-white/10"
+                                     value={step.approver}
+                                     disabled={!!step.approverRole}
+                                     onChange={(e) => {
+                                       const newSteps = [...formData.steps];
+                                       newSteps[idx].approver = e.target.value;
+                                       setFormData({...formData, steps: newSteps});
+                                     }}
+                                   >
+                                     <option value="" className="bg-slate-900">{step.approverRole ? 'Role Selected' : 'Search Person...'}</option>
+                                     {users.filter(u => u.role !== 'Employee' && u._id !== localStorage.getItem('userId')).map(u => (
+                                       <option key={u._id} value={u._id} className="bg-slate-900">{u.name} ({u.role})</option>
+                                     ))}
+                                   </select>
+                                 </div>
                                  <button type="button" onClick={() => removeStep(idx)} className="p-2 text-slate-800 hover:text-red-500 transition-colors">
                                    <X size={18} />
                                  </button>
@@ -324,10 +353,10 @@ const AdminRules = () => {
 
                     <div className="pt-10 flex flex-col gap-4">
                        <button type="submit" disabled={submitting} className="h-14 bg-indigo-600 shadow-xl shadow-indigo-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-indigo-500 transition-all disabled:opacity-50">
-                         {submitting ? 'EXECUTING ARCHITECTURE SYNC...' : editingRule ? 'UPDATE POLICY' : 'COMMIT ARCHITECTURE'}
+                         {submitting ? 'SAVING RULE...' : editingRule ? 'UPDATE RULE' : 'SAVE RULE'}
                        </button>
                        <button type="button" onClick={() => setShowDrawer(false)} className="h-14 bg-white/5 border border-white/10 text-slate-400 font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-white/10 transition-all">
-                          Void Strategy
+                          Cancel
                        </button>
                     </div>
                  </form>

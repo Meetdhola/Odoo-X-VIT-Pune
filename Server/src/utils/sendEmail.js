@@ -20,15 +20,16 @@ const sendEmail = async (options) => {
   try {
     const info = await transporter.sendMail(message);
     console.log('Message sent: %s', info.messageId);
+    return true;
   } catch (error) {
     console.log('\n⚠️ EMAIL SENDING FAILED (Bad Credentials) ⚠️');
-    console.log('Instead of crashing, here is the email that would have been sent:');
     console.log('--------------------------------------------------');
     console.log(`To: ${options.email}`);
     console.log(`Subject: ${options.subject}`);
     console.log(`\nContent: \n`);
     console.log(options.message); // Contains the OTP
     console.log('--------------------------------------------------\n');
+    return false;
   }
 };
 

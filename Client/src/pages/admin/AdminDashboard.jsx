@@ -52,7 +52,7 @@ const AdminDashboard = () => {
   const { totalUsers, expenses, approvalBottlenecks, expensesByCategory } = stats || {};
 
   return (
-    <AdminLayout title="Overview Controller" subtitle="System Statistics Pipeline">
+    <AdminLayout title="Admin Dashboard" subtitle="System Overview">
       <div className="space-y-10">
         
         {/* Row 1 — 5 stat cards */}
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
             <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                <div className="flex items-center gap-3">
                   <Activity size={18} className="text-indigo-500" />
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest">Live Expense Stream</h3>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest">Recent Expenses</h3>
                </div>
                <Link to="/admin/expenses" className="group flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-400 transition-all">
                  Audit Hub <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
@@ -140,7 +140,7 @@ const AdminDashboard = () => {
                   <div className="p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
                      <AlertTriangle size={18} />
                   </div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Matrix Stalls</h3>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Approval Bottlenecks</h3>
                </div>
                <div className="space-y-5">
                  {approvalBottlenecks?.map((bot, idx) => (
@@ -169,7 +169,7 @@ const AdminDashboard = () => {
                   <div className="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
                      <PieChart size={18} />
                   </div>
-                  <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Capital Allocation</h3>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Expenses by Category</h3>
                </div>
                <div className="space-y-6">
                  {(expensesByCategory || []).sort((a,b) => b.total - a.total).slice(0, 5).map((cat, idx) => {

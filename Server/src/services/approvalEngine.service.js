@@ -2,6 +2,7 @@ import Expense from '../models/expense.model.js';
 import ApprovalRule from '../models/approvalRule.model.js';
 import ApprovalRequest from '../models/approvalRequest.model.js';
 import User from '../models/user.model.js';
+import Company from '../models/company.model.js';
 
 /**
  * Finalizes an expense once all approval conditions are met.
@@ -72,9 +73,27 @@ const createRequestForStep = async (expense, rule, stepIndex) => {
   const step = rule.steps[stepIndex];
   if (!step) return;
 
+  let approverId = step.approver;
+
+  // Resolve Role-based approver if specific user is not set
+  if (!approverId && step.approverRole) {
+    if (step.approverRole === 'Manager') {
+      const employee = await User.findById(expense.employee);
+      approverId = employee?.managerId;
+    } else if (step.approverRole === 'Admin') {
+      const company = await Company.findById(expense.company);
+      approverId = company?.admin;
+    }
+  }
+
+  if (!approverId) {
+    console.error(`ApprovalEngine: Could not resolve approver for step ${stepIndex} in rule ${rule._name}`);
+    return;
+  }
+
   await ApprovalRequest.create({
     expense: expense._id,
-    approver: step.approver,
+    approver: approverId,
     step: stepIndex,
     status: 'pending'
   });
