@@ -44,7 +44,7 @@ router.post('/users', async (req, res) => {
       password: hashedPassword,
       role: role || 'Employee',
       companyId: req.user.company,
-      managerId,
+      managerId: managerId === '' ? null : managerId,
       isManagerApprover: isManagerApprover || false
     });
 
@@ -56,13 +56,14 @@ router.post('/users', async (req, res) => {
 
 router.patch('/users/:id', async (req, res) => {
   try {
-    const { role, managerId, isManagerApprover } = req.body;
+    const { name, role, managerId, isManagerApprover } = req.body;
     
     const user = await User.findOne({ _id: req.params.id, companyId: req.user.company });
     if (!user) return res.status(404).json({ error: 'User not found in your company' });
 
-    if (role !== undefined) user.role = role;
-    if (managerId !== undefined) user.managerId = managerId;
+    if (name) user.name = name;
+    if (role) user.role = role;
+    if (managerId !== undefined) user.managerId = managerId === '' ? null : managerId;
     if (isManagerApprover !== undefined) user.isManagerApprover = isManagerApprover;
 
     await user.save({ validateBeforeSave: false });
@@ -99,17 +100,32 @@ router.get('/rules', async (req, res) => {
   }
 });
 
+const sanitizeRuleData = (data) => {
+  const sanitized = { ...data };
+  if (sanitized.specificApprover === '') sanitized.specificApprover = null;
+  if (sanitized.steps) {
+    sanitized.steps = sanitized.steps.map(step => {
+      const s = { ...step };
+      // Ensure specific ID is null if Role is set
+      if (s.approverRole && s.approverRole !== '') {
+        s.approver = null;
+      } else {
+        // If Role is NOT set, ensure it's removed to avoid enum "" error
+        delete s.approverRole;
+      }
+      if (s.approver === '') s.approver = null;
+      return s;
+    });
+  }
+  return sanitized;
+};
+
 router.post('/rules', async (req, res) => {
   try {
-    const { name, steps, conditionType, percentageThreshold, specificApprover } = req.body;
-    
+    const cleanData = sanitizeRuleData(req.body);
     const rule = await ApprovalRule.create({
       company: req.user.company,
-      name,
-      steps,
-      conditionType,
-      percentageThreshold,
-      specificApprover
+      ...cleanData
     });
 
     res.status(201).json({ rule });
@@ -123,12 +139,13 @@ router.patch('/rules/:id', async (req, res) => {
     const rule = await ApprovalRule.findOne({ _id: req.params.id, company: req.user.company });
     if (!rule) return res.status(404).json({ error: 'Approval rule not found' });
 
-    const { steps, conditionType, percentageThreshold, specificApprover } = req.body;
+    const cleanData = sanitizeRuleData(req.body);
     
-    if (steps) rule.steps = steps;
-    if (conditionType) rule.conditionType = conditionType;
-    if (percentageThreshold !== undefined) rule.percentageThreshold = percentageThreshold;
-    if (specificApprover !== undefined) rule.specificApprover = specificApprover;
+    if (cleanData.steps) rule.steps = cleanData.steps;
+    if (cleanData.conditionType) rule.conditionType = cleanData.conditionType;
+    if (cleanData.percentageThreshold !== undefined) rule.percentageThreshold = cleanData.percentageThreshold;
+    if (cleanData.specificApprover !== undefined) rule.specificApprover = cleanData.specificApprover;
+    if (cleanData.name) rule.name = cleanData.name;
 
     await rule.save();
     res.json({ rule });

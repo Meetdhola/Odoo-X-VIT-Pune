@@ -81,8 +81,7 @@ export const register = async (req, res) => {
 
     const message = `Your verification code is: ${otp}\n\nThis code will expire in 15 minutes.`;
 
-    try {
-      await sendEmail({
+    const emailSent = await sendEmail({
         email: user.email,
         subject: 'Your Email Verification Code',
         message,
@@ -96,17 +95,10 @@ export const register = async (req, res) => {
 
       res.status(201).json({
         success: true,
-        message: 'Verification email sent. Please check your inbox.',
+        message: emailSent 
+          ? 'Verification email sent. Please check your inbox.' 
+          : 'Registration successful. (⚠️ Email failed, check server console for OTP)',
       });
-    } catch (err) {
-      console.log(err);
-      user.otp = undefined;
-      user.otpExpires = undefined;
-
-      await user.save({ validateBeforeSave: false });
-
-      return res.status(500).json({ success: false, message: 'Email could not be sent' });
-    }
   } catch (error) {
     handleErrorResponse(res, error);
   }

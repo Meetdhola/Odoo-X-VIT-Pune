@@ -72,15 +72,15 @@ const AdminExpenses = () => {
   const categories = ['Travel', 'Meals', 'Accommodation', 'Software', 'Equipment', 'Other'];
 
   return (
-    <AdminLayout title="Global Audit Cluster" subtitle="Central Expense Telemetry & Verification">
+    <AdminLayout title="Expense Audit" subtitle="Track and verify team expenditures">
       <div className="space-y-10 animate-in fade-in duration-500 pb-20">
         
         {/* Analytics Header */}
         <div className="flex flex-wrap items-center gap-4">
-           <StatusPill label="Total Data" count={total} active={filters.status === ''} onClick={() => setFilters({...filters, status: ''})} />
+           <StatusPill label="All Expenses" count={total} active={filters.status === ''} onClick={() => setFilters({...filters, status: ''})} />
            <StatusPill label="Pending" count={expenses.filter(e => e.status === 'pending').length} active={filters.status === 'pending'} onClick={() => setFilters({...filters, status: 'pending'})} colorClass="text-amber-500" />
-           <StatusPill label="Settled" count={expenses.filter(e => e.status === 'approved').length} active={filters.status === 'approved'} onClick={() => setFilters({...filters, status: 'approved'})} colorClass="text-emerald-500" />
-           <StatusPill label="Flagged" count={expenses.filter(e => e.status === 'rejected').length} active={filters.status === 'rejected'} onClick={() => setFilters({...filters, status: 'rejected'})} colorClass="text-red-500" />
+           <StatusPill label="Approved" count={expenses.filter(e => e.status === 'approved').length} active={filters.status === 'approved'} onClick={() => setFilters({...filters, status: 'approved'})} colorClass="text-emerald-500" />
+           <StatusPill label="Rejected" count={expenses.filter(e => e.status === 'rejected').length} active={filters.status === 'rejected'} onClick={() => setFilters({...filters, status: 'rejected'})} colorClass="text-red-500" />
         </div>
 
         {/* Master Control Bar */}
@@ -107,7 +107,7 @@ const AdminExpenses = () => {
            </div>
 
            <button className="h-12 px-6 bg-white/5 border border-white/10 text-slate-500 font-black rounded-xl flex items-center gap-2 text-[10px] uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all ml-auto shadow-inner">
-             <Download size={14} /> Export Telemetry (CSV)
+             <Download size={14} /> Export to CSV
            </button>
         </div>
 
@@ -116,11 +116,11 @@ const AdminExpenses = () => {
           <table className="w-full text-left">
             <thead>
                <tr className="bg-white/[0.01]">
-                 <th className="px-8 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Originator</th>
-                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Cluster</th>
-                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Raw Val</th>
-                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Normalized</th>
-                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Halt State</th>
+                 <th className="px-8 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Submitted By</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Category</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Amount</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Amount (USD)</th>
+                 <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic">Approver</th>
                  <th className="px-6 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-center">Status</th>
                  <th className="px-8 py-6 text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] italic text-right">Actions</th>
                </tr>
@@ -206,11 +206,11 @@ const AdminExpenses = () => {
                  <div className="h-24 px-10 border-b border-white/5 flex items-center justify-between shrink-0 bg-white/[0.01]">
                     <div className="flex items-center gap-4">
                        <div className="p-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                          <Terminal size={24} />
+                          <Eye size={24} />
                        </div>
                        <div>
-                          <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Inspection Lab</h3>
-                          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Transaction Verification Protocol</p>
+                          <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic">Expense Details</h3>
+                          <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-[0.2em] mt-1 italic">/ Review expense details and history</p>
                        </div>
                     </div>
                     <button onClick={() => setShowDetail(false)} className="p-3 -mr-2 text-slate-600 hover:bg-white/5 rounded-2xl transition-all">
@@ -304,29 +304,55 @@ const AdminExpenses = () => {
                       </div>
                     </div>
 
-                    {/* Admin Force Override */}
-                    {selectedExpense?.status === 'pending' && (
-                      <div className="pt-10 border-t border-white/5 space-y-8 pb-10">
-                         <div className="flex items-center gap-4 p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] shadow-inner">
-                            <ShieldAlert size={24} className="text-indigo-400 shrink-0" />
-                            <p className="text-[11px] text-indigo-300 font-black uppercase tracking-widest leading-relaxed italic">Administrative Override Active: Executing an override bypasses all logic nodes. Action is non-reversible.</p>
-                         </div>
-                         
-                         <div className="space-y-4">
-                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-1 italic italic">Root Justification (Comment)</label>
-                           <textarea 
-                             placeholder="E.G. EMERGENCY CLEARANCE"
-                             className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-sm text-white font-black uppercase outline-none h-32 focus:border-indigo-500 transition-all placeholder:text-slate-800"
-                             value={overrideComment} onChange={(e) => setOverrideComment(e.target.value)}
-                           />
-                         </div>
+                    {/* Admin Actions */}
+                    <div className="pt-10 border-t border-white/5 space-y-8 pb-10">
+                         {selectedExpense?.status === 'approved' && (
+                           <div className="space-y-4">
+                              <div className="flex items-center gap-4 p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-[2rem] shadow-inner">
+                                 <CreditCard size={24} className="text-emerald-400 shrink-0" />
+                                 <p className="text-[11px] text-emerald-300 font-black uppercase tracking-widest leading-relaxed italic">Expense is approved and ready for reimbursement.</p>
+                              </div>
+                              <button 
+                                onClick={async () => {
+                                  try {
+                                    await api.patch(`/admin/expenses/${selectedExpense._id}/reimburse`);
+                                    toast.success('Expense marked as reimbursed');
+                                    setShowDetail(false);
+                                    fetchExpenses();
+                                  } catch (err) {
+                                    toast.error('Failed to reimburse');
+                                  }
+                                }}
+                                className="w-full h-14 bg-emerald-600 shadow-xl shadow-emerald-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-emerald-500 transition-all"
+                              >
+                                Mark as Reimbursed
+                              </button>
+                           </div>
+                         )}
 
-                         <div className="grid grid-cols-2 gap-6 pb-2">
-                           <button onClick={() => handleOverride('approve')} className="h-14 bg-emerald-600 shadow-xl shadow-emerald-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-emerald-500 transition-all">Command Approve</button>
-                           <button onClick={() => handleOverride('reject')} className="h-14 bg-red-600 shadow-xl shadow-red-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-red-500 transition-all">Command Reject</button>
-                         </div>
+                         {selectedExpense?.status === 'pending' && (
+                           <>
+                             <div className="flex items-center gap-4 p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] shadow-inner">
+                                <ShieldAlert size={24} className="text-indigo-400 shrink-0" />
+                                <p className="text-[11px] text-indigo-300 font-black uppercase tracking-widest leading-relaxed italic">Admin Override: This will bypass standard approval steps.</p>
+                             </div>
+                             
+                             <div className="space-y-4">
+                               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] px-1 italic italic">Reason for Override</label>
+                               <textarea 
+                                 placeholder="Enter reason..."
+                                 className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-sm text-white font-black uppercase outline-none h-32 focus:border-indigo-500 transition-all placeholder:text-slate-800"
+                                 value={overrideComment} onChange={(e) => setOverrideComment(e.target.value)}
+                               />
+                             </div>
+
+                             <div className="grid grid-cols-2 gap-6 pb-2">
+                               <button onClick={() => handleOverride('approve')} className="h-14 bg-emerald-600 shadow-xl shadow-emerald-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-emerald-500 transition-all">Force Approve</button>
+                               <button onClick={() => handleOverride('reject')} className="h-14 bg-red-600 shadow-xl shadow-red-600/20 text-white font-black rounded-2xl uppercase tracking-widest text-[11px] hover:bg-red-500 transition-all">Force Reject</button>
+                             </div>
+                           </>
+                         )}
                       </div>
-                    )}
                  </div>
               </motion.div>
             </div>
