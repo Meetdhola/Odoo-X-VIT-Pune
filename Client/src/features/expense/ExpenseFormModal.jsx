@@ -6,6 +6,7 @@ import { ocrService } from './ocr.service.js';
 const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
   const [formData, setFormData] = useState({
     description: '',
+    merchant: '',
     amount: '',
     currency: 'USD',
     category: 'Travel',
@@ -74,6 +75,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
           setFormData(prev => ({
             ...prev,
             amount: results.amount || prev.amount,
+            merchant: results.vendor || prev.merchant,
             description: results.description || prev.description,
             date: results.date || prev.date
           }));
@@ -145,17 +147,30 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
             {/* Left Column: Form */}
             <div className="lg:col-span-7 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InputGroup label="Description" icon={<FileText size={12} />} disabled={isReadOnly}>
+                <InputGroup label="Merchant / Store" icon={<Sparkles size={12} />} disabled={isReadOnly}>
+                  <input
+                    name="merchant"
+                    value={formData.merchant}
+                    onChange={handleChange}
+                    disabled={isReadOnly}
+                    placeholder="e.g. Starbucks, Uber"
+                    className="w-full bg-transparent text-white outline-none uppercase placeholder:normal-case font-medium"
+                  />
+                </InputGroup>
+                <InputGroup label="What is this for?" icon={<FileText size={12} />} disabled={isReadOnly}>
                   <input
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
                     disabled={isReadOnly}
-                    placeholder="e.g. Flight to San Francisco"
+                    placeholder="e.g. Lunch with client"
                     className="w-full bg-transparent text-white outline-none uppercase placeholder:normal-case font-medium"
                   />
                 </InputGroup>
-                <InputGroup label="Expense Date" icon={<Calendar size={12} />} disabled={isReadOnly}>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputGroup label="Date" icon={<Calendar size={12} />} disabled={isReadOnly}>
                   <input
                     type="date"
                     name="date"
@@ -184,7 +199,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
                     <option value="Other">📦 Other</option>
                   </select>
                 </InputGroup>
-                <InputGroup label="Paid By" icon={<CreditCard size={12} />} disabled={isReadOnly}>
+                <InputGroup label="Who paid?" icon={<CreditCard size={12} />} disabled={isReadOnly}>
                   <select
                     name="paidBy"
                     value={formData.paidBy}
@@ -192,7 +207,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
                     disabled={isReadOnly}
                     className="w-full bg-transparent text-white outline-none uppercase font-medium appearance-none"
                   >
-                    <option value="Self">👤 Self (Personal)</option>
+                    <option value="Self">👤 I paid (Reimburse me)</option>
                     <option value="Company Card">💳 Company Card</option>
                     <option value="Petty Cash">💵 Petty Cash</option>
                   </select>
@@ -206,7 +221,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
                  
                  <div className="flex items-center justify-between relative z-10">
                     <label className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">
-                       Transaction Amount
+                       Amount
                     </label>
                     <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 h-10">
                        <select 
@@ -237,13 +252,13 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
               </div>
 
               <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Remarks (Optional)</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1 italic">Notes (Optional)</label>
                 <textarea
                   name="remarks"
                   value={formData.remarks}
                   onChange={handleChange}
                   disabled={isReadOnly}
-                  placeholder="Additional context for the approval team..."
+                  placeholder="Additional info for the approver..."
                   className="w-full bg-white/5 border border-white/10 rounded-2xl h-32 p-4 text-white outline-none focus:border-indigo-500 transition-all resize-none font-medium text-sm"
                 />
               </div>
@@ -252,7 +267,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
             {/* Right Column: Receipt & OCR */}
             <div className="lg:col-span-5 space-y-8">
               <div className="space-y-4">
-                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Official Receipt</h4>
+                <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1 italic">Receipt</h4>
                 <div className={`aspect-[4/5] rounded-[2.5rem] border-2 border-dashed transition-all duration-500 overflow-hidden flex flex-col items-center justify-center relative group ${isScanning ? 'border-indigo-500 bg-indigo-500/5' : 'border-white/10 bg-white/[0.03] hover:border-white/20'}`}>
                   
                   {isScanning && (
@@ -265,7 +280,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
                        </div>
                        <div className="flex items-center gap-2 text-indigo-400 font-black uppercase tracking-widest text-xs">
                           <Sparkles size={16} className="animate-pulse" />
-                          AI Scanning Receipt...
+                          Reading receipt details...
                        </div>
                        <motion.div 
                          initial={{ top: '0%' }}
@@ -296,7 +311,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
                         <Scan size={32} />
                       </div>
                       <p className="text-sm text-slate-400 font-bold uppercase tracking-widest mb-1">Upload Receipt</p>
-                      <p className="text-[10px] text-slate-600 font-medium uppercase tracking-widest">Enable AI Auto-Fill</p>
+                      <p className="text-[10px] text-slate-600 font-medium uppercase tracking-widest italic">Auto-fill with AI</p>
                       <input 
                         type="file" 
                         ref={fileInputRef}
@@ -311,7 +326,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
               {/* Status Log */}
               {expense && (
                 <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1">Audit Trail</h4>
+                  <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest pl-1 italic">Approval History</h4>
                   <div className="glass-card rounded-[2rem] p-6 border-white/5 bg-white/[0.02]">
                     <div className="space-y-4">
                        <StatusLogItem 
@@ -323,10 +338,10 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
                        />
                        <div className="ml-4 w-0.5 h-6 bg-white/5" />
                        <StatusLogItem 
-                          approver="System Engine" 
-                          role="OCR Validation" 
-                          status="Verified" 
-                          time="12:42 4th Oct, 2025" 
+                          approver="Receipt Scan" 
+                          role="Automatic Check" 
+                          status="Details Read" 
+                          time="Just now" 
                           current={false} 
                        />
                     </div>
@@ -345,7 +360,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
                 onClick={handleSave} 
                 className="px-8 py-4 bg-white/5 border border-white/10 text-white font-black rounded-2xl hover:bg-white/10 transition-all uppercase text-xs tracking-widest"
               >
-                Save Draft
+                Save for Later
               </button>
               <button 
                 onClick={handleSubmit} 
@@ -366,7 +381,7 @@ const ExpenseFormModal = ({ isOpen, onClose, expense, onSave, onSubmit }) => {
               onClick={onClose}
               className="px-12 py-4 bg-white/5 border border-white/10 text-white font-black rounded-2xl hover:bg-white/10 transition-all uppercase text-xs tracking-widest"
             >
-              Exit View
+              Close
             </button>
           )}
         </div>

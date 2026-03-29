@@ -45,8 +45,8 @@ const ExpenseDashboard = () => {
       {/* Dynamic Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">Expense Claims</h2>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-2 italic">* Registry of personal reimbursement data</p>
+          <h2 className="text-4xl font-black text-white uppercase tracking-tighter">My Expenses</h2>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-[0.2em] mt-2 italic">* View and manage your expense requests</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -69,25 +69,25 @@ const ExpenseDashboard = () => {
       {/* Stats Section - Fixed Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
          <StatCard 
-            label="Draft / To Submit" 
+            label="Drafts" 
             value={stats.toSubmit} 
             icon={<Clock className="text-slate-400" />} 
             accent="bg-slate-400/20"
-            footer="Ready for validation"
+            footer="Needs to be submitted"
          />
          <StatCard 
-            label="Awaiting Approval" 
+            label="Pending" 
             value={stats.waiting} 
             icon={<Zap className="text-amber-500" />} 
             accent="bg-amber-500/20"
-            footer="Currently in pipeline"
+            footer="Waiting for manager"
          />
          <StatCard 
-            label="Total Approved" 
+            label="Approved" 
             value={stats.approved} 
             icon={<CheckCircle2 className="text-emerald-500" />} 
             accent="bg-emerald-500/20"
-            footer="Successfully settled"
+            footer="Paid successfully"
          />
       </div>
 
@@ -127,8 +127,8 @@ const ExpenseDashboard = () => {
                 <tr>
                    <td colSpan="7" className="px-8 py-24 text-center">
                       <FileText size={48} className="mx-auto mb-6 text-slate-800" />
-                      <p className="text-xs text-slate-600 font-black uppercase tracking-[0.3em]">No Historical Data</p>
-                      <p className="text-[10px] text-slate-700 font-bold uppercase tracking-widest mt-2 italic">Initiate a request to populate the registry</p>
+                      <p className="text-xs text-slate-600 font-black uppercase tracking-[0.3em]">No Expenses Yet</p>
+                      <p className="text-[10px] text-slate-700 font-bold uppercase tracking-widest mt-2 italic">Create a new request to see it here</p>
                    </td>
                 </tr>
               ) : (
@@ -140,9 +140,9 @@ const ExpenseDashboard = () => {
                   >
                     <td className="px-8 py-6">
                       <div className="font-black text-white uppercase text-[13px] tracking-tight group-hover:text-indigo-400 transition-colors">
-                        {expense.description || 'N/A Registry Entry'}
+                        {expense.description || 'No description'}
                       </div>
-                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-0.5 italic">REF: #{expense._id.slice(-6)}</div>
+                      <div className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-0.5 italic">ID: #{expense._id.slice(-6)}</div>
                     </td>
                     <td className="px-8 py-6 text-[12px] text-slate-400 font-bold uppercase">
                       {new Date(expense.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -205,7 +205,7 @@ const StatCard = ({ label, value, icon, accent, footer }) => (
     </div>
     <div className="flex items-baseline gap-2 relative z-10">
       <span className="text-5xl font-black text-white italic tracking-tighter">{value.toLocaleString()}</span>
-      <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest italic opacity-50">Base Currency</span>
+      <span className="text-[10px] text-slate-500 font-black uppercase tracking-widest italic opacity-50">Company Currency</span>
     </div>
     <p className="text-[9px] text-slate-600 font-black uppercase tracking-[0.2em] mt-3 italic">* {footer}</p>
   </div>

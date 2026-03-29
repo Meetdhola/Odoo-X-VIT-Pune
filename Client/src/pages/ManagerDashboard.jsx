@@ -106,8 +106,9 @@ const ManagerDashboard = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white/[0.01]">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Employee</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Category</th>
+                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Employee</th>
+                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Merchant</th>
+                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Category</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Description</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-right">Amount (USD)</th>
                 <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] text-center">Actions</th>

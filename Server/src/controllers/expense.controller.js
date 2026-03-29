@@ -48,9 +48,9 @@ export const getExpense = async (req, res) => {
 // @access  Private/Employee
 export const createExpense = async (req, res) => {
   try {
-    const { amount, currency, category, description, date, receiptUrl, paidBy, remarks } = req.body;
+    const { amount, currency, category, merchant, description, date, receiptUrl, paidBy, remarks } = req.body;
 
-    const company = await Company.findById(req.user.company);
+    const company = await Company.findById(req.user.companyId);
     if (!company) {
       return res.status(404).json({ success: false, message: 'Company not found' });
     }
@@ -58,9 +58,9 @@ export const createExpense = async (req, res) => {
     let convertedAmount = amount;
     if (currency !== company.currency) {
       try {
-        const response = await fetch(`https://open.er-api.com/v6/latest/${currency}`);
+        const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${currency}`);
         const data = await response.json();
-        if (data.result === 'success') {
+        if (data && data.rates) {
           const rate = data.rates[company.currency];
           convertedAmount = amount * rate;
         }
@@ -70,15 +70,16 @@ export const createExpense = async (req, res) => {
     }
 
     // Assign default approval rule if exists
-    const rule = await ApprovalRule.findOne({ company: req.user.company });
+    const rule = await ApprovalRule.findOne({ company: req.user.companyId });
 
     const expense = await Expense.create({
       employee: req.user.id,
-      company: req.user.company,
+      company: req.user.companyId,
       amount,
       currency,
       convertedAmount,
       category,
+      merchant,
       description,
       date: date || Date.now(),
       receiptUrl,
@@ -166,7 +167,7 @@ export const actOnApproval = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Approval request not found' });
     }
 
-    if (request.approver.toString() !== req.user.id.toString()) {
+    if (request.approver.toString() !== req.user.id.toString() && req.user.role !== 'Admin') {
       return res.status(403).json({ success: false, message: 'Not authorized to act on this request' });
     }
 

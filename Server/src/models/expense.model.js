@@ -29,6 +29,9 @@ const expenseSchema = new mongoose.Schema({
   description: {
     type: String
   },
+  merchant: {
+    type: String
+  },
   date: {
     type: Date,
     default: Date.now

@@ -23,13 +23,13 @@ const Sidebar = ({ activeTab, onTabChange }) => {
 
   const navGroups = isAdmin ? [
     {
-      label: 'Admin Control',
+      label: 'Admin Panel',
       items: [
-        { name: 'Overview', path: '/admin', icon: LayoutDashboard },
-        { name: 'User Directory', path: '/admin/users', icon: Users },
-        { name: 'Approval Matrix', path: '/admin/rules', icon: GitBranch },
-        { name: 'Expense Audit', path: '/admin/expenses', icon: Receipt },
-        { name: 'Entity Settings', path: '/admin/company', icon: Settings },
+        { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+        { name: 'Manage Employees', path: '/admin/users', icon: Users },
+        { name: 'Approval Rules', path: '/admin/rules', icon: GitBranch },
+        { name: 'All Expenses', path: '/admin/expenses', icon: Receipt },
+        { name: 'Company Settings', path: '/admin/company', icon: Settings },
       ]
     }
   ] : [
@@ -48,7 +48,7 @@ const Sidebar = ({ activeTab, onTabChange }) => {
 
   if (!isAdmin && isManager) {
     navGroups.push({
-      label: 'Management',
+      label: 'Manager Tools',
       items: [
         { 
           name: 'Team Approvals', 
