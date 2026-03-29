@@ -8,7 +8,8 @@ import expenseRoutes from './routes/expense.routes.js';
 const app = express();
 
 // Middlewares
-app.use(express.json());
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
 app.use(cookieParser());
 app.use(cors({
   origin: true, // Allow all origins to send credentials

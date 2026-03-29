@@ -21,8 +21,8 @@ const DashboardPage = () => {
   }, [user, navigate]);
 
   const titles = {
-    'my-expenses': { title: 'Personal Workspace', subtitle: 'Expense Hub' },
-    'approvals': { title: 'Managerial Oversight', subtitle: 'Approval Matrix' }
+    'my-expenses': { title: 'My Dashboard', subtitle: 'Personal Expenses' },
+    'approvals': { title: 'Team Overview', subtitle: 'Team Approvals' }
   };
 
   return (
@@ -46,7 +46,7 @@ const DashboardPage = () => {
 const LoadingPlaceholder = () => (
   <div className="w-full py-20 flex flex-col items-center justify-center space-y-4">
      <div className="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-     <p className="text-xs text-slate-500 font-black uppercase tracking-widest animate-pulse">Initializing Matrix...</p>
+     <p className="text-xs text-slate-500 font-black uppercase tracking-widest animate-pulse">Loading Dashboard...</p>
   </div>
 );
 

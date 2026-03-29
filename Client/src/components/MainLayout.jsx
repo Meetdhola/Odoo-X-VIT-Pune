@@ -24,7 +24,7 @@ const MainLayout = ({ children, activeTab, onTabChange, title, subtitle }) => {
           <div className="flex items-center gap-6">
              <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
-                <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest italic">Live Workspace</span>
+                <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest italic">Active Session</span>
              </div>
           </div>
         </header>

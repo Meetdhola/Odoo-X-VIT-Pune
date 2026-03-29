@@ -17,7 +17,7 @@ router.use(requireRole('admin'));
 
 router.get('/users', async (req, res) => {
   try {
-    const users = await User.find({ companyId: req.user.company })
+    const users = await User.find({ companyId: req.user.companyId })
       .populate('managerId', 'name email')
       .populate('companyId', 'name');
     res.json({ users });
@@ -29,7 +29,7 @@ router.get('/users', async (req, res) => {
 router.post('/users', async (req, res) => {
   try {
     const { name, email, password, role, managerId, isManagerApprover } = req.body;
-    
+
     // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -84,8 +84,8 @@ router.post('/users', async (req, res) => {
 router.patch('/users/:id', async (req, res) => {
   try {
     const { name, role, managerId, isManagerApprover } = req.body;
-    
-    const user = await User.findOne({ _id: req.params.id, companyId: req.user.company });
+
+    const user = await User.findOne({ _id: req.params.id, companyId: req.user.companyId });
     if (!user) return res.status(404).json({ error: 'User not found in your company' });
 
     if (name) user.name = name;
@@ -106,9 +106,9 @@ router.delete('/users/:id', async (req, res) => {
     if (req.params.id === req.user.id.toString()) {
       return res.status(400).json({ error: 'Cannot delete yourself' });
     }
-    const user = await User.findOneAndDelete({ _id: req.params.id, companyId: req.user.company });
+    const user = await User.findOneAndDelete({ _id: req.params.id, companyId: req.user.companyId });
     if (!user) return res.status(404).json({ error: 'User not found' });
-    
+
     res.json({ message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -119,7 +119,7 @@ router.delete('/users/:id', async (req, res) => {
 
 router.get('/rules', async (req, res) => {
   try {
-    const rules = await ApprovalRule.find({ company: req.user.company })
+    const rules = await ApprovalRule.find({ company: req.user.companyId })
       .populate('steps.approver', 'name email role');
     res.json({ rules });
   } catch (error) {
@@ -163,11 +163,11 @@ router.post('/rules', async (req, res) => {
 
 router.patch('/rules/:id', async (req, res) => {
   try {
-    const rule = await ApprovalRule.findOne({ _id: req.params.id, company: req.user.company });
+    const rule = await ApprovalRule.findOne({ _id: req.params.id, company: req.user.companyId });
     if (!rule) return res.status(404).json({ error: 'Approval rule not found' });
 
     const cleanData = sanitizeRuleData(req.body);
-    
+
     if (cleanData.steps) rule.steps = cleanData.steps;
     if (cleanData.conditionType) rule.conditionType = cleanData.conditionType;
     if (cleanData.percentageThreshold !== undefined) rule.percentageThreshold = cleanData.percentageThreshold;
@@ -183,7 +183,7 @@ router.patch('/rules/:id', async (req, res) => {
 
 router.delete('/rules/:id', async (req, res) => {
   try {
-    const rule = await ApprovalRule.findOneAndDelete({ _id: req.params.id, company: req.user.company });
+    const rule = await ApprovalRule.findOneAndDelete({ _id: req.params.id, company: req.user.companyId });
     if (!rule) return res.status(404).json({ error: 'Rule not found' });
     res.json({ message: 'Rule deleted successfully' });
   } catch (error) {
@@ -196,8 +196,8 @@ router.delete('/rules/:id', async (req, res) => {
 router.get('/expenses', async (req, res) => {
   try {
     const { status, category, page = 1, limit = 20 } = req.query;
-    const query = { company: req.user.company };
-    
+    const query = { company: req.user.companyId };
+
     if (status) query.status = status;
     if (category) query.category = category;
 
@@ -232,10 +232,10 @@ router.get('/expenses', async (req, res) => {
 
 router.get('/expenses/:id', async (req, res) => {
   try {
-    const expense = await Expense.findOne({ _id: req.params.id, company: req.user.company })
+    const expense = await Expense.findOne({ _id: req.params.id, company: req.user.companyId })
       .populate('employee', 'name email')
       .populate('approvalRule', 'name');
-      
+
     if (!expense) return res.status(404).json({ error: 'Expense not found' });
 
     const approvalRequests = await ApprovalRequest.find({ expense: expense._id })
@@ -249,12 +249,12 @@ router.get('/expenses/:id', async (req, res) => {
 
 router.post('/expenses/:id/override', async (req, res) => {
   try {
-    const { action, comment } = req.body; 
+    const { action, comment } = req.body;
     if (!['approve', 'reject'].includes(action)) {
       return res.status(400).json({ error: 'Invalid action. Use approve or reject.' });
     }
 
-    const expense = await Expense.findOne({ _id: req.params.id, company: req.user.company });
+    const expense = await Expense.findOne({ _id: req.params.id, company: req.user.companyId });
     if (!expense) return res.status(404).json({ error: 'Expense not found' });
 
     const newStatus = action === 'approve' ? 'approved' : 'rejected';
